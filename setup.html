@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Identity - Node Setup</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --dim: rgba(255, 255, 255, 0.15);
+            --panel-bg: rgba(10, 10, 10, 0.85);
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #ffffff;
+                --fg: #000000;
+                --dim: rgba(0, 0, 0, 0.15);
+                --panel-bg: rgba(245, 245, 245, 0.85);
+            }
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background-color: var(--bg) !important;
+            background-image: 
+                linear-gradient(var(--dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+            background-size: 80px 80px;
+            color: var(--fg) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .setup-container {
+            display: flex;
+            width: 800px;
+            height: 500px;
+            background: var(--panel-bg);
+            border: 1px solid var(--dim);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .setup-container::before, .setup-container::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--fg);
+            pointer-events: none;
+        }
+
+        .setup-container::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .setup-container::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .sidebar {
+            width: 250px;
+            border-right: 1px solid var(--dim);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            opacity: 0.8;
+        }
+
+        .nav-items {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .nav-item {
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.3;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: opacity 0.3s;
+        }
+
+        .nav-item::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: transparent;
+            border: 1px solid var(--fg);
+            border-radius: 50%;
+        }
+
+        .nav-item.active-nav {
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .nav-item.active-nav::before {
+            background-color: var(--fg);
+            box-shadow: 0 0 10px var(--fg);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 60px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .step {
+            display: none;
+            animation: slideIn 0.4s ease-out forwards;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        p {
+            margin: 0 0 40px 0;
+            font-size: 15px;
+            line-height: 1.8;
+            opacity: 0.7;
+        }
+
+        strong {
+            color: var(--fg);
+            opacity: 1;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px 24px;
+            border: 1px solid var(--dim);
+            background: transparent;
+            color: var(--fg);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: left;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::after {
+            content: '→';
+            position: absolute;
+            right: 24px;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            border-color: var(--fg);
+            background: rgba(128, 128, 128, 0.05);
+            padding-left: 30px;
+        }
+
+        button:hover::after {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .primary-btn {
+            background: var(--fg);
+            color: var(--bg);
+            border-color: var(--fg);
+            text-align: center;
+        }
+
+        .primary-btn:hover {
+            background: var(--bg);
+            color: var(--fg);
+            padding-left: 24px;
+        }
+
+        .primary-btn::after {
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @media (max-width: 850px) {
+            .setup-container { width: 90%; height: auto; min-height: 500px; flex-direction: column; }
+            .sidebar { width: auto; border-right: none; border-bottom: 1px solid var(--dim); padding: 20px; }
+            .nav-items { flex-direction: row; justify-content: space-between; gap: 10px; }
+            .nav-item span { display: none; }
+            .brand { margin-bottom: 20px; text-align: center; }
+            .content-area { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="setup-container">
+        <div class="sidebar">
+            <div class="brand">Node Setup</div>
+            <div class="nav-items">
+                <div class="nav-item active-nav" id="nav1"><span>Initialization</span></div>
+                <div class="nav-item" id="nav2"><span>Environment</span></div>
+                <div class="nav-item" id="nav3"><span>Verification</span></div>
+                <div class="nav-item" id="nav4"><span>Security</span></div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div id="step1" class="step active">
+                <h2>Infinity Identity</h2>
+                <p>Your journey towards a <strong>world-class digital verification system</strong> begins here. Set up your <strong>member node preferences</strong> to securely access the portal.</p>
+                <div class="btn-group">
+                    <button class="primary-btn" onclick="next(2)">Start Configuration</button>
+                </div>
+            </div>
+            
+            <div id="step2" class="step">
+                <h2>Select Theme</h2>
+                <p>Choose your preferred operational environment. This can be modified later in the node settings.</p>
+                <div class="btn-group">
+                    <button onclick="setTheme('system')">System Default</button>
+                    <button onclick="setTheme('dark')">Dark Theme</button>
+                    <button onclick="setTheme('light')">Light Theme</button>
+                </div>
+            </div>
+            
+            <div id="step3" class="step">
+                <h2>Configuration Saved</h2>
+                <p id="themeMsg"></p>
+                <div class="btn-group">
+                    <button class="primary-btn" onclick="next(4)">Continue Setup</button>
+                </div>
+            </div>
+            
+            <div id="step4" class="step">
+                <h2>Security Protocol</h2>
+                <p>Would you like to enable <strong>Web Authentication</strong> for extra security? This restricts node access to your device's <strong>biometrics</strong> or <strong>screen lock</strong>.</p>
+                <div class="btn-group">
+                    <button class="primary-btn" onclick="setLock(true)">Enable Node Lock</button>
+                    <button onclick="setLock(false)">Skip Security Layer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="brain.js"></script>
+    <script>
+        let config = { theme: 'system', appLock: false };
+        
+        function next(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav'));
+            
+            document.getElementById('step' + step).classList.add('active');
+            document.getElementById('nav' + step).classList.add('active-nav');
+        }
+        
+        function setTheme(theme) {
+            config.theme = theme;
+            if(typeof brain !== 'undefined') brain.applyTheme(theme);
+            document.getElementById('themeMsg').innerHTML = `You have selected the <strong>${theme.toUpperCase()}</strong> interface. Proceed to the final security step.`;
+            next(3);
+        }
+        
+        function setLock(enable) {
+            if (enable) {
+                if(typeof brain !== 'undefined') brain.saveSettings(config);
+                window.location.href = 'applock.html';
+            } else {
+                config.appLock = false;
+                if(typeof brain !== 'undefined') brain.saveSettings(config);
+                window.location.href = 'home.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Details</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --card-bg: rgba(25, 25, 25, 0.8); --accent: #ffffff; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --card-bg: rgba(240, 240, 240, 0.8); --accent: #000000; } }
+        
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); 
+            background-size: 80px 80px; 
+            color: var(--fg) !important; 
+            overflow-x: hidden; 
+            display: block !important; 
+            text-align: left !important;
+            min-height: 100vh;
+        }
+
+        .top-left { position: absolute; top: 30px; left: 30px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; z-index: 10; text-decoration: none; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .container { width: 100%; max-width: 800px; margin: 0 auto; padding: 100px 20px 40px 20px; animation: fadeIn 0.5s; box-sizing: border-box; }
+        
+        .mail-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 40px; backdrop-filter: blur(20px); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+        @media (prefers-color-scheme: light) { .mail-card { border-color: rgba(0,0,0,0.2); box-shadow: 0 15px 40px rgba(0,0,0,0.1); } }
+        
+        .mail-header { border-bottom: 1px solid var(--dim); padding-bottom: 25px; margin-bottom: 25px; }
+        .mail-subject { font-size: 26px; font-weight: 800; margin: 0 0 15px 0; letter-spacing: 1px; line-height: 1.3; }
+        
+        .mail-meta { display: flex; justify-content: space-between; align-items: center; }
+        .sender-info { display: flex; flex-direction: column; gap: 5px; }
+        .sender-name { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
+        .sender-id { font-size: 11px; opacity: 0.5; font-family: monospace; letter-spacing: 1px; }
+        .mail-date { font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
+        
+        .mail-body { font-size: 14px; line-height: 1.8; opacity: 0.85; letter-spacing: 0.5px; white-space: pre-wrap; }
+        .mail-body strong { color: var(--accent); }
+        
+        .highlight-box { margin-top: 30px; padding: 20px; background: rgba(255, 71, 87, 0.05); border: 1px dashed rgba(255, 71, 87, 0.4); border-radius: 12px; }
+        .highlight-box h4 { margin: 0 0 10px 0; color: #ff4757; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
+        .highlight-box p { margin: 0; font-family: monospace; font-size: 16px; font-weight: bold; }
+
+        .btn-action { display: inline-block; margin-top: 30px; padding: 15px 30px; background: var(--fg); color: var(--bg); border: none; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: all 0.3s; }
+        .btn-action:hover { background: transparent; color: var(--fg); border: 1px solid var(--fg); }
+        .btn-action.hidden { display: none; }
+
+        @media (max-width: 768px) { .container { padding: 80px 20px 20px 20px; } .mail-card { padding: 25px; } .mail-subject { font-size: 20px; } .mail-meta { flex-direction: column; align-items: flex-start; gap: 15px; } .mail-date { text-align: left; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <a href="message.html" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    
+    <div class="container">
+        <div class="mail-card">
+            <div class="mail-header">
+                <h1 class="mail-subject" id="m-subject">Loading...</h1>
+                <div class="mail-meta">
+                    <div class="sender-info">
+                        <span class="sender-name" id="m-sender">SYSTEM AI</span>
+                        <span class="sender-id" id="m-sender-id">ID: SYS-CORE-00</span>
+                    </div>
+                    <div class="mail-date" id="m-date">--</div>
+                </div>
+            </div>
+            
+            <div class="mail-body" id="m-body">Fetching decrypted packet...</div>
+            
+            <div id="m-timer-box" class="highlight-box" style="display: none;">
+                <h4>Countdown Active</h4>
+                <p>Time Remaining: <span id="m-timer-val">02:15:00</span></p>
+            </div>
+
+            <button id="m-btn" class="btn-action hidden" onclick="history.back()">Take Action</button>
+        </div>
+    </div>
+    
+    <script src="brain.js"></script>
+    <script>
+        const msgs = {
+            'msg1': {
+                subject: 'Action Required: Node Activation Fee',
+                sender: 'Billing Protocol', senderId: 'SYS-BILL-X9', date: 'Today, 10:45 AM',
+                body: 'Attention Node Operator,\n\nCitizen Rahul Krishnan (Node ID: INF-8832-A) has submitted the required data packets, but the final activation fee is still pending.\n\nIf the transaction is not completed within the given timeframe, the request will automatically be purged from the local cache and the citizen will have to restart the verification process.',
+                showTimer: true,
+                btnText: 'Send Reminder'
+            },
+            'msg2': {
+                subject: 'Incoming Profile Route Detected',
+                sender: 'Routing Protocol', senderId: 'SYS-ROUT-11', date: 'Today, 10:35 AM',
+                body: 'Node Transfer Alert.\n\nA new profile (Anjali Menon) has been routed to your jurisdiction from Ward 02. Preliminary scans indicate an address mismatch at the border sector.\n\nPlease navigate to your Transfer Inbox to physically verify the coordinates and Accept or Reject the packet.',
+                showTimer: false,
+                btnText: 'View Transfer Inbox'
+            },
+            'msg3': {
+                subject: '12 New Verification Packets',
+                sender: 'Central Ledger', senderId: 'SYS-CORE-55', date: 'Today, 09:30 AM',
+                body: 'Data Sync Complete.\n\n12 new citizens have applied for Identity nodes within your assigned grid (Ward 04). Ensure you cross-reference their physical documents before initiating the anchoring protocol.\n\nFraudulent verifications will result in an immediate lockdown of your operator clearance.',
+                showTimer: false,
+                btnText: 'Review Requests'
+            },
+            'msg4': {
+                subject: 'Transaction Cleared: INF-1022-A',
+                sender: 'Billing Protocol', senderId: 'SYS-BILL-X9', date: 'Today, 08:45 AM',
+                body: 'Payment Acknowledged.\n\nCitizen Arun Kumar (INF-1022-A) has successfully paid the processing fees. The cryptographic lock has been lifted and the profile is now permanently anchored to the distributed ledger.\n\nNo further actions are required from your end.',
+                showTimer: false,
+                btnText: null
+            },
+            'msg5': {
+                subject: 'Protocol Update v2.4.1',
+                sender: 'Infinity Administration', senderId: 'SYS-ADMIN-01', date: 'Yesterday, 11:00 PM',
+                body: 'System Node Operators,\n\nThe core framework has been updated to Version 2.4.1. This patch includes enhanced encryption standards for inter-node transfers and faster UI rendering for mobile terminals.\n\nYour dashboard has been updated automatically. Ensure your network connection remains stable.',
+                showTimer: false,
+                btnText: 'Acknowledge'
+            }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const msgId = urlParams.get('id') || 'msg1';
+        const msgData = msgs[msgId];
+
+        if(msgData) {
+            document.getElementById('m-subject').innerText = msgData.subject;
+            document.getElementById('m-sender').innerText = msgData.sender;
+            document.getElementById('m-sender-id').innerText = "ID: " + msgData.senderId;
+            document.getElementById('m-date').innerText = msgData.date;
+            document.getElementById('m-body').innerText = msgData.body;
+            
+            if(msgData.showTimer) {
+                document.getElementById('m-timer-box').style.display = 'block';
+                startTimer();
+            }
+            
+            if(msgData.btnText) {
+                const btn = document.getElementById('m-btn');
+                btn.innerText = msgData.btnText;
+                btn.classList.remove('hidden');
+                btn.onclick = () => {
+                    if(msgId === 'msg2') window.location.href = 'transfer.html';
+                    else if(msgId === 'msg3') window.location.href = 'request.html';
+                    else {
+                        alert('System Process', 'Action executed successfully.');
+                        history.back();
+                    }
+                };
+            }
+        } else {
+            document.getElementById('m-subject').innerText = 'Message Not Found';
+            document.getElementById('m-body').innerText = 'The requested data packet has been corrupted or deleted.';
+        }
+
+        function startTimer() {
+            let totalSeconds = 2 * 3600 + 15 * 60; 
+            setInterval(() => {
+                if (totalSeconds <= 0) return;
+                totalSeconds--;
+                let h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                let m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                let s = String(totalSeconds % 60).padStart(2, '0');
+                const tVal = document.getElementById('m-timer-val');
+                if(tVal) tVal.innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

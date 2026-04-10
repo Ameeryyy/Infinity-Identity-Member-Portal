@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Requests List</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --card-bg: rgba(25, 25, 25, 0.8); --accent: #ffffff; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --card-bg: rgba(240, 240, 240, 0.8); --accent: #000000; } }
+        
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); 
+            background-size: 80px 80px; 
+            color: var(--fg) !important; 
+            overflow-x: hidden; 
+            display: block !important; 
+            text-align: left !important; 
+            min-height: 100vh;
+        }
+
+        .top-left { position: absolute; top: 30px; left: 30px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; z-index: 10; text-decoration: none; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 100px 40px 40px 40px; animation: fadeIn 0.5s; box-sizing: border-box; }
+        
+        .header-section { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; position: relative; z-index: 100; }
+        .page-title { font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0; border-left: 5px solid var(--accent); padding-left: 20px; }
+        
+        .search-box { display: flex; background: rgba(255,255,255,0.05); border: 1px solid var(--dim); border-radius: 12px; padding: 5px; backdrop-filter: blur(10px); width: 100%; max-width: 500px; align-items: center; position: relative; }
+        @media (prefers-color-scheme: light) { .search-box { background: rgba(0,0,0,0.03); } }
+        
+        .custom-select { position: relative; border-right: 1px solid var(--dim); height: 100%; display: flex; align-items: center; }
+        .select-selected { background: transparent; color: var(--fg); padding: 12px 15px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
+        .select-selected::after { content: "▼"; font-size: 8px; transition: transform 0.3s; opacity: 0.6; }
+        .custom-select.open .select-selected::after { transform: rotate(180deg); }
+        
+        .select-items { position: absolute; background: rgba(15, 15, 15, 0.98); top: calc(100% + 10px); left: 0; z-index: 999; border: 1px solid var(--dim); border-radius: 10px; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 10px 40px rgba(0,0,0,0.8); min-width: 140px; display: none; flex-direction: column; }
+        @media (prefers-color-scheme: light) { .select-items { background: rgba(245, 245, 245, 0.98); box-shadow: 0 10px 40px rgba(0,0,0,0.15); } }
+        .select-items.show { display: flex; animation: dropIn 0.2s ease-out; }
+        .select-items div { color: var(--fg); padding: 15px; cursor: pointer; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: background 0.2s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .select-items div:last-child { border-bottom: none; }
+        .select-items div:hover { background-color: rgba(255, 255, 255, 0.1); color: var(--accent); }
+        @media (prefers-color-scheme: light) { .select-items div { border-bottom: 1px solid rgba(0,0,0,0.05); } .select-items div:hover { background-color: rgba(0, 0, 0, 0.05); } }
+
+        .search-input { flex: 1; background: transparent; border: none; padding: 12px 15px; color: var(--fg); font-size: 14px; outline: none; font-family: inherit; }
+        .search-input::placeholder { color: var(--fg); opacity: 0.4; }
+        .search-btn { background: transparent; border: none; color: var(--fg); padding: 0 15px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; display: flex; align-items: center; justify-content: center; }
+        .search-btn:hover { opacity: 1; }
+        .search-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .request-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 30px; width: 100%; align-items: start; position: relative; z-index: 10; }
+        
+        .user-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 30px; backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; transition: transform 0.3s; width: 100%; box-sizing: border-box; }
+        @media (prefers-color-scheme: light) { .user-card { border-color: rgba(0,0,0,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.1); } }
+        .user-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        
+        .uc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .uc-head h3 { margin: 0; font-size: 22px; text-transform: capitalize; }
+        .uc-head p { margin: 5px 0 0 0; font-size: 12px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        .badge { font-size: 10px; padding: 6px 12px; border: 1px solid currentColor; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; color: #f39c12; }
+        
+        .uc-body { font-size: 13px; opacity: 0.8; line-height: 1.8; margin-bottom: 25px; flex: 1; }
+        .uc-body strong { color: var(--accent); }
+        
+        .btn-details { width: 100%; padding: 14px; background: rgba(255,255,255,0.1); color: var(--fg); border: 1px dashed var(--dim); border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-bottom: 15px; box-sizing: border-box; }
+        @media (prefers-color-scheme: light) { .btn-details { background: rgba(0,0,0,0.05); } }
+        .btn-details:hover { background: var(--fg); color: var(--bg); border-style: solid; }
+        
+        .action-bar { display: flex; gap: 12px; border-top: 1px solid var(--dim); padding-top: 20px; }
+        .btn { flex: 1; padding: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--dim); border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer; transition: all 0.3s; }
+        .btn-accept { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+        .btn-accept:hover { background: transparent; color: var(--fg); }
+        .btn-reject { color: #ff4757; border-color: rgba(255, 71, 87, 0.3); }
+        .btn-reject:hover { background: rgba(255, 71, 87, 0.1); border-color: #ff4757; }
+        .btn-transfer:hover { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        
+        .inf-confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
+        .inf-confirm-btns button { flex: 1; }
+        .btn-outline { background: transparent !important; color: var(--fg) !important; border-color: var(--dim) !important; }
+        .btn-outline:hover { border-color: var(--fg) !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes dropIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 768px) { 
+            .container { padding: 80px 20px 20px 20px; } 
+            .request-grid { grid-template-columns: 1fr; } 
+            .header-section { flex-direction: column; align-items: flex-start; gap: 20px; } 
+            .search-box { max-width: 100%; } 
+        }
+    </style>
+</head>
+<body>
+    <a href="home.html" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    <div class="container">
+        
+        <div class="header-section">
+            <h1 class="page-title">Pending Requests</h1>
+            
+            <div class="search-box">
+                <div class="custom-select" id="customFilter">
+                    <div class="select-selected" id="selectedFilterText">NAME</div>
+                    <div class="select-items" id="filterItems">
+                        <div data-val="name">NAME</div>
+                        <div data-val="id">NODE ID</div>
+                        <div data-val="location">LOCATION</div>
+                    </div>
+                </div>
+                <input type="hidden" id="activeFilter" value="name">
+                
+                <input type="text" class="search-input" id="searchInput" placeholder="Search requests...">
+                <div class="search-btn">
+                    <svg viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="request-grid" id="cardContainer">
+            
+            <div class="user-card" id="card-INF-8832-A" data-name="Rahul Krishnan" data-id="INF-8832-A" data-location="Ward 04, Central Block">
+                <div class="uc-head">
+                    <div>
+                        <h3>Rahul Krishnan</h3>
+                        <p>Address Verification</p>
+                    </div>
+                    <span class="badge">Pending</span>
+                </div>
+                <div class="uc-body">
+                    <strong>Node ID:</strong> INF-8832-A<br>
+                    <strong>Location:</strong> Ward 04, Central Block<br>
+                    <strong>Time:</strong> Submitted 2 hours ago
+                </div>
+                <button class="btn-details" onclick="window.location.href='details.html?id=INF-8832-A'">View Details</button>
+                <div class="action-bar">
+                    <button class="btn btn-accept" onclick="confirmAction('card-INF-8832-A', 'accept')">Accept</button>
+                    <button class="btn btn-transfer" onclick="confirmAction('card-INF-8832-A', 'transfer')">Transfer</button>
+                    <button class="btn btn-reject" onclick="confirmAction('card-INF-8832-A', 'reject')">Reject</button>
+                </div>
+            </div>
+
+            <div class="user-card" id="card-INF-9021-B" data-name="Meera Santhosh" data-id="INF-9021-B" data-location="Ward 04, East Zone">
+                <div class="uc-head">
+                    <div>
+                        <h3>Meera Santhosh</h3>
+                        <p>Initial Registration</p>
+                    </div>
+                    <span class="badge">Pending</span>
+                </div>
+                <div class="uc-body">
+                    <strong>Node ID:</strong> INF-9021-B<br>
+                    <strong>Location:</strong> Ward 04, East Zone<br>
+                    <strong>Time:</strong> Submitted 5 hours ago
+                </div>
+                <button class="btn-details" onclick="window.location.href='details.html?id=INF-9021-B'">View Details</button>
+                <div class="action-bar">
+                    <button class="btn btn-accept" onclick="confirmAction('card-INF-9021-B', 'accept')">Accept</button>
+                    <button class="btn btn-transfer" onclick="confirmAction('card-INF-9021-B', 'transfer')">Transfer</button>
+                    <button class="btn btn-reject" onclick="confirmAction('card-INF-9021-B', 'reject')">Reject</button>
+                </div>
+            </div>
+
+            <div class="user-card" id="card-INF-7741-C" data-name="Anand Varma" data-id="INF-7741-C" data-location="Ward 04, South Block">
+                <div class="uc-head">
+                    <div>
+                        <h3>Anand Varma</h3>
+                        <p>Identity Renewal</p>
+                    </div>
+                    <span class="badge">Pending</span>
+                </div>
+                <div class="uc-body">
+                    <strong>Node ID:</strong> INF-7741-C<br>
+                    <strong>Location:</strong> Ward 04, South Block<br>
+                    <strong>Time:</strong> Submitted 8 hours ago
+                </div>
+                <button class="btn-details" onclick="window.location.href='details.html?id=INF-7741-C'">View Details</button>
+                <div class="action-bar">
+                    <button class="btn btn-accept" onclick="confirmAction('card-INF-7741-C', 'accept')">Accept</button>
+                    <button class="btn btn-transfer" onclick="confirmAction('card-INF-7741-C', 'transfer')">Transfer</button>
+                    <button class="btn btn-reject" onclick="confirmAction('card-INF-7741-C', 'reject')">Reject</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="brain.js"></script>
+    <script>
+        const selectContainer = document.getElementById("customFilter");
+        const selectedText = document.getElementById("selectedFilterText");
+        const selectItems = document.getElementById("filterItems");
+        const hiddenInput = document.getElementById("activeFilter");
+
+        selectedText.addEventListener("click", function(e) {
+            e.stopPropagation();
+            selectItems.classList.toggle("show");
+            selectContainer.classList.toggle("open");
+        });
+
+        const options = selectItems.querySelectorAll("div");
+        options.forEach(option => {
+            option.addEventListener("click", function() {
+                selectedText.innerText = this.innerText;
+                hiddenInput.value = this.getAttribute("data-val");
+                selectItems.classList.remove("show");
+                selectContainer.classList.remove("open");
+                triggerSearch(); 
+            });
+        });
+
+        document.addEventListener("click", function(e) {
+            if (!selectContainer.contains(e.target)) {
+                selectItems.classList.remove("show");
+                selectContainer.classList.remove("open");
+            }
+        });
+
+        const searchInput = document.getElementById('searchInput');
+        const cards = document.querySelectorAll('.user-card');
+
+        function triggerSearch() {
+            const filterType = hiddenInput.value; 
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            cards.forEach(card => {
+                const dataValue = card.getAttribute(`data-${filterType}`).toLowerCase();
+                if (dataValue.includes(searchTerm)) {
+                    card.style.display = "flex"; 
+                } else {
+                    card.style.display = "none"; 
+                }
+            });
+        }
+        
+        searchInput.addEventListener('input', triggerSearch);
+
+        function customConfirm(title, message, confirmCallback) {
+            if(typeof brain !== 'undefined' && brain.setupCustomAlert) {
+                if(!document.querySelector('.inf-overlay')) {
+                    brain.setupCustomAlert();
+                }
+                const overlay = document.createElement('div');
+                overlay.className = 'inf-overlay';
+                overlay.innerHTML = `
+                    <div class="inf-alert">
+                        <h3>${title}</h3>
+                        <p style="margin-bottom: 0; font-size: 13px; line-height: 1.6;">${message}</p>
+                        <div class="inf-confirm-btns">
+                            <button class="btn-outline" onclick="const o=this.closest('.inf-overlay');o.classList.remove('inf-show');setTimeout(()=>o.remove(),300)">Cancel</button>
+                            <button id="inf-confirm-ok">Confirm</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.classList.add('inf-show'), 10);
+                
+                document.getElementById('inf-confirm-ok').onclick = function() {
+                    const o = this.closest('.inf-overlay');
+                    o.classList.remove('inf-show');
+                    setTimeout(()=> {
+                        o.remove();
+                        if(confirmCallback) confirmCallback();
+                    }, 300);
+                };
+            } else {
+                if(confirm(title + ": \n" + message)) {
+                    if(confirmCallback) confirmCallback();
+                }
+            }
+        }
+
+        function executeAction(cardId, type) {
+            if(type === 'transfer') {
+                alert('Routing Active', 'Profile transferred to the adjacent node.');
+                document.getElementById(cardId).style.display = 'none';
+            }
+            if(type === 'reject') {
+                alert('Node Rejected', 'The profile has been discarded from your jurisdiction.');
+                document.getElementById(cardId).style.display = 'none';
+            }
+        }
+
+        function confirmAction(cardId, type) {
+            const card = document.getElementById(cardId);
+            const name = card ? card.getAttribute('data-name') : 'Unknown';
+            const id = card ? card.getAttribute('data-id') : '0000';
+
+            if(type === 'accept') {
+                // Directly redirect to AI verification page with details
+                window.location.href = `verify_action.html?id=${id}&name=${encodeURIComponent(name)}`;
+                return;
+            }
+
+            let title = "";
+            let msg = "";
+            
+            if (type === 'transfer') {
+                title = "ROUTING WARNING";
+                msg = "Are you sure you want to TRANSFER this profile? Ensure they belong to an adjacent ward before proceeding.";
+            } else if (type === 'reject') {
+                title = "LEGAL WARNING";
+                msg = "Rejecting a legitimate citizen without proper investigation is a violation of the Identity Act. If the provided details are true, you will be held accountable and may face strict legal actions.<br><br>Are you absolutely sure you want to REJECT this node?";
+            }
+
+            customConfirm(title, msg, () => {
+                executeAction(cardId, type);
+            });
+        }
+    </script>
+</body>
+</html>

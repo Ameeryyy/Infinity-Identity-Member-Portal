@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Identity - Member Node</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --dim: rgba(255, 255, 255, 0.15);
+            --card-bg: rgba(25, 25, 25, 0.8);
+            --hover-bg: rgba(255, 255, 255, 0.08);
+            --accent: #ffffff;
+            --sidebar-width: 300px;
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #ffffff;
+                --fg: #000000;
+                --dim: rgba(0, 0, 0, 0.15);
+                --card-bg: rgba(240, 240, 240, 0.8);
+                --hover-bg: rgba(0, 0, 0, 0.05);
+                --accent: #000000;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background-color: var(--bg) !important;
+            background-image: 
+                linear-gradient(var(--dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+            background-size: 80px 80px;
+            color: var(--fg) !important;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: block;
+        }
+
+        /* ----- SIDEBAR (DESKTOP ONLY) ----- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: rgba(5, 5, 5, 0.95);
+            border-right: 1px solid var(--dim);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        @media (prefers-color-scheme: light) {
+            .sidebar { background: rgba(250, 250, 250, 0.95); }
+        }
+
+        .brand-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid var(--dim);
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-title svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+        }
+
+        .system-stats {
+            padding: 20px;
+            border-bottom: 1px solid var(--dim);
+            font-size: 11px;
+            line-height: 2;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .system-stats strong {
+            color: var(--accent);
+            opacity: 1;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .nav-menu {
+            flex-grow: 1;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 20px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            color: var(--fg);
+            opacity: 0.5;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        .nav-item:hover {
+            opacity: 1;
+            background: var(--hover-bg);
+            padding-left: 25px;
+        }
+
+        .nav-item.active {
+            opacity: 1;
+            background: var(--fg);
+            color: var(--bg);
+            padding-left: 25px;
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+        }
+
+        @media (prefers-color-scheme: light) {
+            .nav-item.active { box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid var(--dim);
+        }
+
+        .settings-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            border: 1px solid var(--dim);
+            border-radius: 8px;
+            color: var(--fg);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .settings-btn:hover {
+            border-color: var(--accent);
+            background: var(--hover-bg);
+            transform: translateY(-2px);
+        }
+
+        /* ----- MAIN CONTENT ----- */
+        .main-content {
+            position: absolute;
+            top: 0;
+            left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        @media (prefers-color-scheme: light) {
+            .main-content { background: rgba(255, 255, 255, 0.4); }
+        }
+
+        .mobile-header {
+            display: none;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid var(--dim);
+            backdrop-filter: blur(20px);
+            justify-content: space-between;
+            align-items: center;
+            z-index: 90;
+        }
+
+        @media (prefers-color-scheme: light) {
+            .mobile-header { background: rgba(245, 245, 245, 0.95); }
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 40px 60px;
+            overflow-y: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin: 0 0 30px 0;
+            text-transform: uppercase;
+            border-left: 5px solid var(--accent);
+            padding-left: 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+            width: 100%;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .dashboard-wrapper {
+            width: 100%;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .summary-card { 
+            border: 1px dashed rgba(255,255,255,0.3); 
+            border-radius: 16px; 
+            padding: 35px; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(10px); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 25px; 
+            transition: all 0.3s; 
+            height: 100%;
+        }
+        
+        @media (prefers-color-scheme: light) { 
+            .summary-card { 
+                border: 1px dashed rgba(0,0,0,0.3); 
+                background: rgba(255,255,255,0.6); 
+            } 
+        }
+        
+        .summary-card:hover { 
+            border-color: var(--accent); 
+            transform: translateY(-5px); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        
+        .sa-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+        }
+        
+        .sa-title { 
+            font-size: 18px; 
+            font-weight: bold; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+        }
+        
+        .sa-title svg { 
+            width: 24px; 
+            height: 24px; 
+            fill: currentColor; 
+            opacity: 0.8; 
+        }
+        
+        .sa-meta { 
+            font-size: 12px; 
+            opacity: 0.5; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            margin: 0 0 5px 0; 
+        }
+        
+        .sa-count { 
+            font-size: 48px; 
+            font-weight: 800; 
+            margin: 0; 
+            font-variant-numeric: tabular-nums; 
+        }
+        
+        .btn-main { 
+            width: 100%; 
+            padding: 16px; 
+            background: var(--fg); 
+            color: var(--bg); 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 13px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            margin-top: 10px; 
+        }
+        
+        .btn-main:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 20px rgba(255,255,255,0.1); 
+        }
+        
+        @media (prefers-color-scheme: light) { 
+            .btn-main:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.1); } 
+        }
+        
+        .btn-main:active { 
+            transform: scale(0.98); 
+        }
+
+        .desktop-only {
+            display: none !important;
+        }
+
+        @media (min-width: 769px) {
+            .desktop-only {
+                display: flex !important;
+            }
+        }
+
+        .info-section {
+            margin-top: 10px;
+            padding-top: 30px;
+            border-top: 1px dashed rgba(255,255,255,0.15);
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (prefers-color-scheme: light) {
+            .info-section { border-top-color: rgba(0,0,0,0.15); }
+        }
+
+        .info-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--fg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.9;
+        }
+
+        .info-title svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .info-desc {
+            font-size: 13px;
+            opacity: 0.5;
+            line-height: 1.8;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .visual-bar {
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (prefers-color-scheme: light) {
+            .visual-bar { background: rgba(0,0,0,0.1); }
+        }
+
+        .visual-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 50%;
+            height: 100%;
+            background: var(--fg);
+            animation: scanline 2.5s infinite ease-in-out;
+            box-shadow: 0 0 10px var(--fg);
+        }
+
+        @keyframes scanline {
+            0% { left: -50%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .bottom-nav {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ----- RESPONSIVE RULES (MOBILE VIEW) ----- */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                left: 0;
+                width: 100vw;
+                height: calc(100vh - 90px); 
+                margin-top: 0;
+            }
+            .mobile-header {
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 70px;
+            }
+            .content-area {
+                padding: 20px;
+                padding-bottom: 100px; /* Space for floating nav */
+                margin-top: 70px;
+            }
+            .section-title {
+                font-size: 24px;
+            }
+            .dashboard-wrapper {
+                max-width: 100%;
+            }
+
+            /* FLOATING BOTTOM NAV (SQUARE BOX) */
+            .bottom-nav {
+                display: flex;
+                background: rgba(15, 15, 15, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(20px);
+                z-index: 100;
+                position: fixed;
+                bottom: 25px; /* Detached from the bottom edge */
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 380px;
+                height: 65px;
+                border-radius: 20px; /* Small rounded box */
+                align-items: center;
+                justify-content: space-evenly;
+                box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+                padding: 0 5px;
+            }
+
+            @media (prefers-color-scheme: light) {
+                .bottom-nav { background: rgba(245, 245, 245, 0.95); border: 1px solid rgba(0, 0, 0, 0.15); box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+            }
+
+            .b-nav-item {
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--fg);
+                opacity: 0.4;
+                cursor: pointer;
+                border-radius: 14px;
+                transition: all 0.3s;
+            }
+
+            .b-nav-item svg {
+                width: 24px;
+                height: 24px;
+                fill: currentColor;
+                transition: transform 0.3s;
+            }
+
+            .b-nav-item.active {
+                opacity: 1;
+                background: var(--fg);
+                color: var(--bg);
+                box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+            }
+
+            @media (prefers-color-scheme: light) {
+                .b-nav-item.active { box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+            }
+
+            .b-nav-item.active svg {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand-header">
+            <div class="brand-title">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,10.5A1.5,1.5 0 0,1 13.5,12A1.5,1.5 0 0,1 12,13.5A1.5,1.5 0 0,1 10.5,12A1.5,1.5 0 0,1 12,10.5M7.5,10.5A1.5,1.5 0 0,1 9,12A1.5,1.5 0 0,1 7.5,13.5A1.5,1.5 0 0,1 6,12A1.5,1.5 0 0,1 7.5,10.5M16.5,10.5A1.5,1.5 0 0,1 18,12A1.5,1.5 0 0,1 16.5,13.5A1.5,1.5 0 0,1 15,12A1.5,1.5 0 0,1 16.5,10.5Z"/></svg>
+                Infinity
+            </div>
+        </div>
+        
+        <div class="system-stats">
+            <div><span class="status-dot"></span> <strong>Node Status:</strong> Secure & Active</div>
+            <div style="margin-top: 10px;"><strong>Location:</strong> Ward 04, Central</div>
+            <div style="margin-top: 10px;"><strong>Clearance:</strong> Member Verify</div>
+            <div style="margin-top: 10px; opacity: 0.5;" id="liveDateStr">SYNCING...</div>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('new-req')">
+                <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+                New Requests
+            </div>
+            <div class="nav-item" onclick="switchTab('transfer-req')">
+                <svg viewBox="0 0 24 24"><path d="M16,17.01V10H14V15.1L5.39,6.47L3.97,7.89L12.58,16.5H7.46V18.5H16.04L16,17.01M20.03,6.1L18.61,4.68L10,13.3V8.18H8V15.19L16.61,6.58H11.5V4.58H20.03V6.1Z"/></svg>
+                Transfer Inbox
+            </div>
+            <div class="nav-item" onclick="switchTab('accepted-list')">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,19.93A8,8 0 0,0 4.06,13H11V19.93M13,19.93V13H19.94A8,8 0 0,0 13,19.93M19.94,11H13V4.06A8,8 0 0,0 19.94,11M11,4.06V11H4.06A8,8 0 0,0 11,4.06Z"/></svg>
+                Accepted
+            </div>
+            <div class="nav-item" onclick="switchTab('message-tab')">
+                <svg viewBox="0 0 24 24"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2M20 16H5.17L4 17.17V4H20V16M18 14H6V12H18V14M18 11H6V9H18V11M18 8H6V6H18V8Z"/></svg>
+                Message Hub
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="settings-btn" onclick="window.location.href='settings.html'">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                Node Settings
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        
+        <div class="mobile-header">
+            <div class="brand-title" style="font-size: 16px; margin: 0; letter-spacing: 3px;">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: currentColor;"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,10.5A1.5,1.5 0 0,1 13.5,12A1.5,1.5 0 0,1 12,13.5A1.5,1.5 0 0,1 10.5,12A1.5,1.5 0 0,1 12,10.5M7.5,10.5A1.5,1.5 0 0,1 9,12A1.5,1.5 0 0,1 7.5,13.5A1.5,1.5 0 0,1 6,12A1.5,1.5 0 0,1 7.5,10.5M16.5,10.5A1.5,1.5 0 0,1 18,12A1.5,1.5 0 0,1 16.5,13.5A1.5,1.5 0 0,1 15,12A1.5,1.5 0 0,1 16.5,10.5Z"/></svg>
+                Infinity
+            </div>
+            <div onclick="window.location.href='settings.html'" style="opacity: 0.8; cursor: pointer;">
+                <svg viewBox="0 0 24 24" style="width: 26px; height: 26px; fill: currentColor;"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+            </div>
+        </div>
+
+        <div class="content-area">
+            
+            <div id="new-req" class="tab-content active">
+                <div class="dashboard-wrapper">
+                    <h2 class="section-title">New Requests</h2>
+                    <div class="summary-card">
+                        <div class="sa-header">
+                            <h3 class="sa-title">
+                                <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+                                Pending Verifications
+                            </h3>
+                        </div>
+                        <div>
+                            <p class="sa-meta">Total New Requests</p>
+                            <h2 class="sa-count">12</h2>
+                        </div>
+                        <button class="btn-main" onclick="window.location.href='request.html'">View Requests</button>
+
+                        <div class="info-section desktop-only">
+                            <div class="info-title">
+                                <svg viewBox="0 0 24 24"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 17.96,13.82 17.96,15.47C17.73,16 17.44,16.5 17.13,17Z"/></svg>
+                                Secure Channel Active
+                            </div>
+                            <p class="info-desc">All verifications are end-to-end encrypted. The node is actively listening for incoming localized data packets.</p>
+                            <div class="visual-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="transfer-req" class="tab-content">
+                <div class="dashboard-wrapper">
+                    <h2 class="section-title">Transfer Inbox</h2>
+                    <div class="summary-card">
+                        <div class="sa-header">
+                            <h3 class="sa-title">
+                                <svg viewBox="0 0 24 24"><path d="M16,17.01V10H14V15.1L5.39,6.47L3.97,7.89L12.58,16.5H7.46V18.5H16.04L16,17.01M20.03,6.1L18.61,4.68L10,13.3V8.18H8V15.19L16.61,6.58H11.5V4.58H20.03V6.1Z"/></svg>
+                                Incoming Transfers
+                            </h3>
+                        </div>
+                        <div>
+                            <p class="sa-meta">Total Transfer Requests</p>
+                            <h2 class="sa-count">3</h2>
+                        </div>
+                        <button class="btn-main" onclick="window.location.href='transfer.html'">Review Transfers</button>
+
+                        <div class="info-section desktop-only">
+                            <div class="info-title">
+                                <svg viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L5,8.09L12,12.03L19,8.09L12,4.15M12,19.84L19,15.89V9.82L12,13.78L5,9.82V15.89L12,19.84Z"/></svg>
+                                Inter-Node Routing
+                            </div>
+                            <p class="info-desc">Cross-ward boundaries are being actively monitored. Data transfers are cryptographically verified before syncing.</p>
+                            <div class="visual-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="accepted-list" class="tab-content">
+                <div class="dashboard-wrapper">
+                    <h2 class="section-title">Accepted List</h2>
+                    <div class="summary-card">
+                        <div class="sa-header">
+                            <h3 class="sa-title">
+                                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,19.93A8,8 0 0,0 4.06,13H11V19.93M13,19.93V13H19.94A8,8 0 0,0 13,19.93M19.94,11H13V4.06A8,8 0 0,0 19.94,11M11,4.06V11H4.06A8,8 0 0,0 11,4.06Z"/></svg>
+                                Verified Citizens
+                            </h3>
+                        </div>
+                        <div>
+                            <p class="sa-meta">Total Accepted</p>
+                            <h2 class="sa-count">150</h2>
+                        </div>
+                        <button class="btn-main" onclick="window.location.href='accept.html'">View Database</button>
+
+                        <div class="info-section desktop-only">
+                            <div class="info-title">
+                                <svg viewBox="0 0 24 24"><path d="M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z"/></svg>
+                                Immutable Ledger Sync
+                            </div>
+                            <p class="info-desc">All verified profiles are permanently anchored to the distributed network. The central database is fully synchronized.</p>
+                            <div class="visual-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="message-tab" class="tab-content">
+                <div class="dashboard-wrapper">
+                    <h2 class="section-title">Message Hub</h2>
+                    <div class="summary-card">
+                        <div class="sa-header">
+                            <h3 class="sa-title">
+                                <svg viewBox="0 0 24 24"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2M20 16H5.17L4 17.17V4H20V16M18 14H6V12H18V14M18 11H6V9H18V11M18 8H6V6H18V8Z"/></svg>
+                                Secure Comms
+                            </h3>
+                        </div>
+                        <div>
+                            <p class="sa-meta">Unread Messages</p>
+                            <h2 class="sa-count">0</h2>
+                        </div>
+                        <button class="btn-main" onclick="window.location.href='message.html'">Open Inbox</button>
+
+                        <div class="info-section desktop-only">
+                            <div class="info-title">
+                                <svg viewBox="0 0 24 24"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 17.96,13.82 17.96,15.47C17.73,16 17.44,16.5 17.13,17Z"/></svg>
+                                Encrypted Channel
+                            </div>
+                            <p class="info-desc">All communications are end-to-end encrypted. Messages are automatically destroyed from local cache after viewing.</p>
+                            <div class="visual-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="b-nav-item active" data-target="new-req" onclick="switchTab('new-req')">
+            <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+        </div>
+        <div class="b-nav-item" data-target="transfer-req" onclick="switchTab('transfer-req')">
+            <svg viewBox="0 0 24 24"><path d="M16,17.01V10H14V15.1L5.39,6.47L3.97,7.89L12.58,16.5H7.46V18.5H16.04L16,17.01M20.03,6.1L18.61,4.68L10,13.3V8.18H8V15.19L16.61,6.58H11.5V4.58H20.03V6.1Z"/></svg>
+        </div>
+        <div class="b-nav-item" data-target="accepted-list" onclick="switchTab('accepted-list')">
+            <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,19.93A8,8 0 0,0 4.06,13H11V19.93M13,19.93V13H19.94A8,8 0 0,0 13,19.93M19.94,11H13V4.06A8,8 0 0,0 19.94,11M11,4.06V11H4.06A8,8 0 0,0 11,4.06Z"/></svg>
+        </div>
+        <div class="b-nav-item" data-target="message-tab" onclick="switchTab('message-tab')">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2M20 16H5.17L4 17.17V4H20V16M18 14H6V12H18V14M18 11H6V9H18V11M18 8H6V6H18V8Z"/></svg>
+        </div>
+    </nav>
+
+    <script src="brain.js"></script>
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.b-nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            
+            let sideIndex = 0;
+            if(tabId === 'new-req') sideIndex = 0;
+            if(tabId === 'transfer-req') sideIndex = 1;
+            if(tabId === 'accepted-list') sideIndex = 2;
+            if(tabId === 'message-tab') sideIndex = 3;
+            
+            const sideItems = document.querySelectorAll('.nav-item');
+            if(sideItems[sideIndex]) {
+                sideItems[sideIndex].classList.add('active');
+            }
+
+            const activeBottomNav = document.querySelector(`.b-nav-item[data-target="${tabId}"]`);
+            if(activeBottomNav) activeBottomNav.classList.add('active');
+        }
+
+        function updateDate() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const dateEl = document.getElementById('liveDateStr');
+            if(dateEl) dateEl.innerText = "UPDATED: " + dateStr;
+        }
+        updateDate();
+        setInterval(updateDate, 60000);
+        
+        window.alert = function(title, msg) {
+            if(typeof brain !== 'undefined' && brain.setupCustomAlert) {
+                if(!document.querySelector('.inf-overlay')) {
+                    brain.setupCustomAlert();
+                }
+                const overlay = document.createElement('div');
+                overlay.className = 'inf-overlay';
+                overlay.innerHTML = `<div class="inf-alert"><h3>${title}</h3><p>${msg}</p><button onclick="const o=this.closest('.inf-overlay');o.classList.remove('inf-show');setTimeout(()=>o.remove(),300)">OK</button></div>`;
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.classList.add('inf-show'), 10);
+            } else {
+                console.log(title + ": " + msg);
+            }
+        };
+    </script>
+</body>
+</html>

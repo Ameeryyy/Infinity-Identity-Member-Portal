@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Verification & Action</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --card-bg: rgba(25, 25, 25, 0.8); --accent: #ffffff; --warn: #ff4757; --success: #2ecc71; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --card-bg: rgba(240, 240, 240, 0.8); --accent: #000000; } }
+        
+        body { 
+            margin: 0; font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); 
+            background-size: 80px 80px; color: var(--fg) !important; 
+            overflow-x: hidden; display: block !important; text-align: left !important; min-height: 100vh;
+        }
+
+        .top-left { position: absolute; top: 30px; left: 30px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; z-index: 10; text-decoration: none; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .container { width: 100%; max-width: 800px; margin: 0 auto; padding: 100px 20px 40px 20px; animation: fadeIn 0.5s; box-sizing: border-box; }
+        .page-title { font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; border-left: 5px solid var(--accent); padding-left: 20px; }
+        
+        .verify-card { background: var(--card-bg); border: 1px solid var(--dim); border-radius: 16px; padding: 40px; backdrop-filter: blur(20px); box-shadow: 0 15px 40px rgba(0,0,0,0.4); text-align: center; }
+        @media (prefers-color-scheme: light) { .verify-card { box-shadow: 0 15px 40px rgba(0,0,0,0.1); } }
+        
+        .user-meta { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px dashed var(--dim); }
+        .user-meta h2 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+        .user-meta p { margin: 5px 0 0 0; font-size: 12px; opacity: 0.5; font-family: monospace; letter-spacing: 2px; }
+
+        .ai-meter-container { position: relative; width: 180px; height: 180px; margin: 0 auto 30px auto; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 4px dashed var(--dim); }
+        .ai-meter-container::after { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--fg); animation: spin 2s linear infinite; opacity: 0.5; }
+        
+        .score-val { font-size: 48px; font-weight: 900; font-variant-numeric: tabular-nums; }
+        .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; position: absolute; bottom: 30px; }
+
+        .warning-box { display: none; background: rgba(255, 71, 87, 0.1); border: 1px dashed var(--warn); color: var(--warn); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: left; animation: pulseWarn 2s infinite alternate; }
+        .warning-box h4 { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px; }
+        .warning-box h4 svg { width: 18px; height: 18px; fill: currentColor; }
+        .warning-box p { margin: 0; font-size: 12px; line-height: 1.6; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .btn-tool { padding: 18px; background: rgba(255,255,255,0.05); border: 1px solid var(--dim); border-radius: 12px; color: var(--fg); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        @media (prefers-color-scheme: light) { .btn-tool { background: rgba(0,0,0,0.02); } }
+        .btn-tool svg { width: 24px; height: 24px; fill: currentColor; opacity: 0.8; }
+        .btn-tool:hover, .btn-tool.active { border-color: var(--accent); background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+        
+        /* EXPANDABLE PANELS */
+        .action-panel { display: none; background: rgba(0,0,0,0.4); border: 1px solid var(--dim); border-radius: 12px; padding: 25px; margin-bottom: 30px; text-align: left; animation: fadeIn 0.3s; }
+        @media (prefers-color-scheme: light) { .action-panel { background: rgba(255,255,255,0.4); } }
+        
+        .panel-title { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 20px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--dim); padding-bottom: 10px; }
+        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 4px; background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.4); }
+        .status-badge.completed { background: rgba(46, 204, 113, 0.2); color: var(--success); border-color: rgba(46, 204, 113, 0.4); }
+        
+        .contact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .contact-btn { padding: 15px 10px; background: transparent; border: 1px solid var(--dim); border-radius: 8px; color: var(--fg); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; transition: all 0.2s; }
+        .contact-btn:hover { background: var(--fg); color: var(--bg); }
+        .contact-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        .form-group { margin-bottom: 15px; position: relative; }
+        .form-group label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; opacity: 0.7; }
+        
+        .inf-input { width: 100%; padding: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--dim); border-radius: 8px; color: var(--fg); font-family: inherit; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; outline: none; box-sizing: border-box; }
+        @media (prefers-color-scheme: light) { .inf-input { background: rgba(0,0,0,0.03); } }
+        .inf-input:focus { border-color: var(--accent); }
+        ::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.6; }
+        @media (prefers-color-scheme: light) { ::-webkit-calendar-picker-indicator { filter: invert(0); } }
+
+        /* CUSTOM FORM SELECT STYLES */
+        .inf-custom-select { position: relative; width: 100%; }
+        .inf-select-btn { width: 100%; padding: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--dim); border-radius: 8px; color: var(--fg); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        @media (prefers-color-scheme: light) { .inf-select-btn { background: rgba(0,0,0,0.03); } }
+        .inf-select-btn::after { content: "▼"; font-size: 10px; opacity: 0.6; transition: transform 0.3s; }
+        .inf-custom-select.open .inf-select-btn { border-color: var(--accent); }
+        .inf-custom-select.open .inf-select-btn::after { transform: rotate(180deg); opacity: 1; }
+        
+        .inf-select-list { position: absolute; top: calc(100% + 5px); left: 0; width: 100%; background: rgba(15, 15, 15, 0.98); border: 1px solid var(--dim); border-radius: 8px; z-index: 999; display: none; flex-direction: column; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
+        @media (prefers-color-scheme: light) { .inf-select-list { background: rgba(245, 245, 245, 0.98); box-shadow: 0 15px 40px rgba(0,0,0,0.15); } }
+        .inf-select-list.show { display: flex; animation: dropIn 0.2s ease-out; }
+        .inf-select-item { padding: 15px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--fg); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+        .inf-select-item:last-child { border-bottom: none; }
+        .inf-select-item:hover { background: rgba(255,255,255,0.1); color: var(--accent); }
+        @media (prefers-color-scheme: light) { .inf-select-item { border-bottom-color: rgba(0,0,0,0.05); } .inf-select-item:hover { background: rgba(0,0,0,0.05); } }
+        
+        .inf-select-item.disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; color: var(--warn); }
+        .inf-select-item.disabled:hover { background: transparent; color: var(--warn); }
+
+        .check-group { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin-bottom: 20px; }
+        .check-group input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--success); }
+        .check-group span { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+
+        .escalate-box { background: rgba(255,255,255,0.05); border: 1px dashed var(--dim); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .escalate-box p { margin: 0; font-size: 11px; opacity: 0.7; line-height: 1.5; }
+        .btn-small { padding: 8px 15px; background: transparent; border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.3s; }
+        .btn-small:hover { background: var(--warn); color: var(--bg); }
+
+        .btn-submit { width: 100%; padding: 15px; background: var(--fg); color: var(--bg); border: none; border-radius: 8px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-submit:active { transform: scale(0.98); }
+
+        .final-actions { display: flex; gap: 15px; border-top: 1px solid var(--dim); padding-top: 30px; }
+        .btn-final { flex: 1; padding: 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: all 0.3s; }
+        .btn-accept { background: var(--fg); color: var(--bg); }
+        .btn-accept:hover { box-shadow: 0 5px 20px rgba(255,255,255,0.2); }
+        @media (prefers-color-scheme: light) { .btn-accept:hover { box-shadow: 0 5px 20px rgba(0,0,0,0.2); } }
+        .btn-reject { background: transparent; color: var(--warn); border: 1px solid rgba(255, 71, 87, 0.4); }
+        .btn-reject:hover { background: rgba(255, 71, 87, 0.1); border-color: var(--warn); }
+
+        .inf-confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
+        .inf-confirm-btns button { flex: 1; }
+        .btn-outline { background: transparent !important; color: var(--fg) !important; border-color: var(--dim) !important; }
+        .btn-outline:hover { border-color: var(--fg) !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulseWarn { 0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.2); } 100% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); } }
+        @keyframes dropIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 600px) { 
+            .action-grid { grid-template-columns: 1fr; } 
+            .final-actions { flex-direction: column; } 
+            .verify-card { padding: 25px; } 
+            .contact-grid { grid-template-columns: 1fr 1fr; }
+            .escalate-box { flex-direction: column; gap: 15px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <a href="#" onclick="history.back(); return false;" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    
+    <div class="container">
+        <h1 class="page-title">AI Verification</h1>
+        
+        <div class="verify-card">
+            <div class="user-meta">
+                <h2 id="v-name">Loading...</h2>
+                <p id="v-id">NODE ID: -----</p>
+            </div>
+
+            <div class="ai-meter-container" id="meterBox">
+                <div class="score-val" id="v-score">0%</div>
+                <div class="score-lbl">Authenticity</div>
+            </div>
+
+            <div class="warning-box" id="v-warn">
+                <h4>
+                    <svg viewBox="0 0 24 24"><path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/></svg>
+                    High Fraud Risk Detected
+                </h4>
+                <p>The AI system indicates a low authenticity score. The provided data might be fake or duplicated. It is highly recommended to communicate directly or schedule a physical slot before acceptance.</p>
+            </div>
+
+            <div class="action-grid">
+                <button class="btn-tool" id="btn-comm" onclick="togglePanel('comm-panel', 'btn-comm')">
+                    <svg viewBox="0 0 24 24"><path d="M20,15.5C18.8,15.5 17.5,15.3 16.4,14.9C16.3,14.9 16.2,14.9 16.1,15L14.3,16.8C11.6,15.3 9.2,12.9 7.7,10.2L9.5,8.4C9.6,8.3 9.6,8.2 9.7,8.1C10.1,7 10.3,5.7 10.3,4.5C10.3,4 9.9,3.5 9.4,3.5H5.5C5,3.5 4.5,4 4.5,4.5C4.5,13.6 11.9,21 21,21C21.5,21 22,20.6 22,20.1V16.5C22,15.9 21.5,15.5 21,15.5M12,3A9,9 0 0,1 21,12H19A7,7 0 0,0 12,5V3M12,7A5,5 0 0,1 17,12H15A3,3 0 0,0 12,9V7Z"/></svg>
+                    Direct Communication
+                </button>
+                <button class="btn-tool" id="btn-slot" onclick="togglePanel('slot-panel', 'btn-slot')">
+                    <svg viewBox="0 0 24 24"><path d="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3,4.9 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8M12,13H17V18H12V13Z"/></svg>
+                    Schedule Slot
+                </button>
+            </div>
+
+            <div id="comm-panel" class="action-panel">
+                <div class="panel-title">
+                    Contact Options
+                    <span class="status-badge" id="comm-status">Pending</span>
+                </div>
+                
+                <div class="contact-grid">
+                    <button class="contact-btn" onclick="window.location.href='tel:0000000000'">
+                        <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+                        Call
+                    </button>
+                    <button class="contact-btn" onclick="window.open('https://wa.me/')">
+                        <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M8.53 7.33C8.37 7.33 8.1 7.39 7.87 7.64C7.65 7.89 7 8.5 7 9.71C7 10.93 7.89 12.1 8 12.27C8.14 12.44 9.76 14.94 12.25 16C12.84 16.27 13.3 16.42 13.66 16.53C14.25 16.72 14.79 16.69 15.22 16.63C15.7 16.56 16.68 16.11 16.89 15.57C17.1 15.04 17.1 14.58 17.04 14.47C16.97 14.37 16.81 14.31 16.56 14.18C16.31 14.06 15.08 13.45 14.85 13.36C14.62 13.26 14.46 13.22 14.29 13.45C14.13 13.7 13.65 14.28 13.5 14.47C13.36 14.65 13.2 14.68 12.96 14.56C12.71 14.43 11.9 14.16 10.93 13.31C10.18 12.65 9.67 11.8 9.53 11.56C9.38 11.31 9.51 11.19 9.64 11.07C9.75 10.95 9.89 10.78 10.03 10.63C10.15 10.47 10.2 10.36 10.28 10.2C10.37 10.04 10.33 9.9 10.27 9.78C10.2 9.65 9.69 8.39 9.48 7.88C9.27 7.39 9.07 7.45 8.91 7.46C8.78 7.46 8.62 7.46 8.46 7.46C8.31 7.46 8.08 7.51 7.87 7.76"/></svg>
+                        WhatsApp
+                    </button>
+                    <button class="contact-btn" onclick="window.location.href='sms:0000000000'">
+                        <svg viewBox="0 0 24 24"><path d="M20,2A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H6L2,22V4C2,2.89 2.9,2 4,2H20M9,10V12H15V10H9M7,6V8H17V6H7Z"/></svg>
+                        SMS
+                    </button>
+                    <button class="contact-btn" onclick="window.location.href='mailto:user@infinity.com'">
+                        <svg viewBox="0 0 24 24"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"/></svg>
+                        Email
+                    </button>
+                </div>
+
+                <label class="check-group">
+                    <input type="checkbox" id="commCheck" onchange="toggleCommStatus()">
+                    <span>Mark Communication as Completed</span>
+                </label>
+
+                <div class="escalate-box">
+                    <p>Unreachable for 48 hours? Flag this profile for physical investigation.</p>
+                    <button class="btn-small" onclick="alert('Inquiry Initiated', 'Profile has been flagged. A field agent will verify the details.')">Initiate Inquiry</button>
+                </div>
+            </div>
+
+            <div id="slot-panel" class="action-panel">
+                <div class="panel-title">Book Verification Slot</div>
+                
+                <div class="form-group" style="z-index: 90;">
+                    <label>Select Nearest Akshaya Center</label>
+                    <div class="inf-custom-select" id="centerSelect">
+                        <div class="inf-select-btn" id="centerText">Select Center</div>
+                        <div class="inf-select-list" id="centerOptions">
+                            <div class="inf-select-item" data-val="Akshaya Center, Alappuzha H.O">Akshaya Center, Alappuzha H.O</div>
+                            <div class="inf-select-item" data-val="Akshaya Center, Ambalappuzha">Akshaya Center, Ambalappuzha</div>
+                            <div class="inf-select-item" data-val="Akshaya Center, Cherthala">Akshaya Center, Cherthala</div>
+                            <div class="inf-select-item" data-val="Akshaya Center, Kuttanad">Akshaya Center, Kuttanad</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="slot-center" value="">
+                </div>
+
+                <div class="form-group" style="z-index: 80;">
+                    <label>Select Date (Min 3 Days Later)</label>
+                    <input type="date" class="inf-input" id="slot-date">
+                </div>
+
+                <div class="form-group" style="z-index: 70;">
+                    <label>Select 1-Hour Time Slot</label>
+                    <div class="inf-custom-select" id="timeSelect">
+                        <div class="inf-select-btn" id="timeText">Select Time Slot</div>
+                        <div class="inf-select-list" id="timeOptions">
+                            <div class="inf-select-item" data-val="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</div>
+                            <div class="inf-select-item" data-val="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</div>
+                            <div class="inf-select-item" data-val="01:00 PM - 02:00 PM">01:00 PM - 02:00 PM</div>
+                            <div class="inf-select-item" data-val="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM</div>
+                            <div class="inf-select-item" data-val="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="slot-time" value="">
+                </div>
+
+                <button class="btn-submit" onclick="confirmSlot()">Confirm Booking</button>
+            </div>
+
+            <div class="final-actions">
+                <button class="btn-final btn-accept" onclick="confirmAccept()">Override & Accept</button>
+                <button class="btn-final btn-reject" onclick="confirmReject()">Reject Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="brain.js"></script>
+    <script>
+        // Data Loading
+        const urlParams = new URLSearchParams(window.location.search);
+        const reqId = urlParams.get('id') || 'INF-0000-X';
+        const reqName = urlParams.get('name') || 'Unknown Profile';
+
+        document.getElementById('v-name').innerText = reqName;
+        document.getElementById('v-id').innerText = "NODE ID: " + reqId;
+
+        // Set min date for slot booking to 3 Days later
+        const dateInput = document.getElementById("slot-date");
+        const today = new Date();
+        today.setDate(today.getDate() + 3); 
+        const minDateStr = today.toISOString().split('T')[0];
+        dateInput.setAttribute('min', minDateStr);
+        dateInput.value = minDateStr;
+
+        // Simulate booked slots randomly on date change
+        function updateAvailableSlots() {
+            const timeItems = document.querySelectorAll('#timeOptions .inf-select-item');
+            timeItems.forEach(item => {
+                item.classList.remove('disabled');
+                let txt = item.innerText.replace(' (BOOKED)', '');
+                item.innerText = txt;
+                item.dataset.disabled = "false";
+                
+                // Randomly disable slots
+                if(Math.random() < 0.3) {
+                    item.classList.add('disabled');
+                    item.innerText = txt + ' (BOOKED)';
+                    item.dataset.disabled = "true";
+                }
+            });
+            document.getElementById('timeText').innerText = "Select Time Slot";
+            document.getElementById('slot-time').value = "";
+        }
+        dateInput.addEventListener('change', updateAvailableSlots);
+        updateAvailableSlots(); // Initial setup
+
+        // Custom Dropdown Logic
+        function setupCustomSelect(selectId, textId, optionsId, inputId) {
+            const selectContainer = document.getElementById(selectId);
+            const selectedText = document.getElementById(textId);
+            const selectItems = document.getElementById(optionsId);
+            const hiddenInput = document.getElementById(inputId);
+
+            selectedText.addEventListener("click", function(e) {
+                e.stopPropagation();
+                // Close others
+                document.querySelectorAll('.inf-select-list').forEach(list => {
+                    if(list.id !== optionsId) list.classList.remove('show');
+                });
+                document.querySelectorAll('.inf-custom-select').forEach(cont => {
+                    if(cont.id !== selectId) cont.classList.remove('open');
+                });
+                
+                selectItems.classList.toggle("show");
+                selectContainer.classList.toggle("open");
+            });
+
+            const options = selectItems.querySelectorAll(".inf-select-item");
+            options.forEach(option => {
+                option.addEventListener("click", function() {
+                    if(this.dataset.disabled === "true") return; // Prevent clicking booked slots
+                    selectedText.innerText = this.innerText;
+                    hiddenInput.value = this.getAttribute("data-val");
+                    selectItems.classList.remove("show");
+                    selectContainer.classList.remove("open");
+                });
+            });
+        }
+
+        setupCustomSelect('centerSelect', 'centerText', 'centerOptions', 'slot-center');
+        setupCustomSelect('timeSelect', 'timeText', 'timeOptions', 'slot-time');
+
+        document.addEventListener("click", function(e) {
+            if (!e.target.closest('.inf-custom-select')) {
+                document.querySelectorAll('.inf-select-list').forEach(list => list.classList.remove('show'));
+                document.querySelectorAll('.inf-custom-select').forEach(cont => cont.classList.remove('open'));
+            }
+        });
+
+        // AI Meter Logic
+        let hash = 0;
+        for (let i = 0; i < reqId.length; i++) {
+            hash = reqId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let score = Math.abs(hash % 60) + 35; 
+
+        let currentScore = 0;
+        const scoreEl = document.getElementById('v-score');
+        const meterBox = document.getElementById('meterBox');
+        
+        const timer = setInterval(() => {
+            currentScore += 2;
+            if(currentScore >= score) {
+                currentScore = score;
+                clearInterval(timer);
+                if(score < 65) {
+                    document.getElementById('v-warn').style.display = 'block';
+                    meterBox.style.borderColor = 'var(--warn)';
+                    scoreEl.style.color = 'var(--warn)';
+                } else {
+                    meterBox.style.borderColor = '#2ecc71';
+                    scoreEl.style.color = '#2ecc71';
+                }
+            }
+            scoreEl.innerText = currentScore + '%';
+        }, 30);
+
+        // Panel Toggle Logic
+        function togglePanel(panelId, btnId) {
+            document.querySelectorAll('.action-panel').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.btn-tool').forEach(b => b.classList.remove('active'));
+            
+            const panel = document.getElementById(panelId);
+            const btn = document.getElementById(btnId);
+            
+            if(panel.dataset.open !== 'true') {
+                panel.style.display = 'block';
+                btn.classList.add('active');
+                document.querySelectorAll('.action-panel').forEach(p => p.dataset.open = 'false');
+                panel.dataset.open = 'true';
+            } else {
+                panel.dataset.open = 'false';
+            }
+        }
+
+        // Communication Status Toggle
+        function toggleCommStatus() {
+            const isChecked = document.getElementById('commCheck').checked;
+            const statusBadge = document.getElementById('comm-status');
+            
+            if(isChecked) {
+                statusBadge.innerText = "✔ Completed";
+                statusBadge.classList.add('completed');
+            } else {
+                statusBadge.innerText = "Pending";
+                statusBadge.classList.remove('completed');
+            }
+        }
+
+        // Alert Setup (Uses brain.js if available)
+        function customConfirm(title, message, confirmCallback) {
+            if(typeof brain !== 'undefined' && brain.setupCustomAlert) {
+                if(!document.querySelector('.inf-overlay')) {
+                    brain.setupCustomAlert();
+                }
+                const overlay = document.createElement('div');
+                overlay.className = 'inf-overlay';
+                overlay.innerHTML = `
+                    <div class="inf-alert">
+                        <h3>${title}</h3>
+                        <p style="margin-bottom: 0; font-size: 13px; line-height: 1.6;">${message}</p>
+                        <div class="inf-confirm-btns">
+                            <button class="btn-outline" onclick="const o=this.closest('.inf-overlay');o.classList.remove('inf-show');setTimeout(()=>o.remove(),300)">Cancel</button>
+                            <button id="inf-confirm-ok">Confirm</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.classList.add('inf-show'), 10);
+                
+                document.getElementById('inf-confirm-ok').onclick = function() {
+                    const o = this.closest('.inf-overlay');
+                    o.classList.remove('inf-show');
+                    setTimeout(()=> {
+                        o.remove();
+                        if(confirmCallback) confirmCallback();
+                    }, 300);
+                };
+            } else {
+                if(confirm(title + ": \n\n" + message)) {
+                    if(confirmCallback) confirmCallback();
+                }
+            }
+        }
+
+        // Action Functions
+        function confirmSlot() {
+            const center = document.getElementById('slot-center').value;
+            const date = document.getElementById('slot-date').value;
+            const time = document.getElementById('slot-time').value;
+            
+            if(!center) { alert("Error", "Please select a valid Akshaya Center."); return; }
+            if(!date) { alert("Error", "Please select a valid date for the slot."); return; }
+            if(!time) { alert("Error", "Please select an available time slot."); return; }
+
+            const msg = `Schedule confirmed for ${reqName}.\n\nLocation: ${center}\nDate: ${date}\nTime: ${time}\n\nAn automated SMS has been dispatched.`;
+            
+            customConfirm("SLOT BOOKED", msg, () => {
+                togglePanel('slot-panel', 'btn-slot');
+            });
+        }
+
+        function confirmAccept() {
+            let msg = "Are you sure you want to force accept this citizen? Your operator ID will be logged for this action.";
+            customConfirm("OVERRIDE & ACCEPT", msg, () => {
+                alert('Success', 'Profile has been verified and permanently anchored.');
+                setTimeout(() => { window.location.href = 'home.html'; }, 1500);
+            });
+        }
+
+        function confirmReject() {
+            let msg = "Are you sure you want to reject this node? The application will be discarded.";
+            customConfirm("REJECT PROFILE", msg, () => {
+                alert('Node Rejected', 'The profile has been successfully discarded.');
+                setTimeout(() => { history.back(); }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

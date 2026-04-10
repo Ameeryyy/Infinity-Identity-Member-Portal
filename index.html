@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Identity - Member Node Boot</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --dim: rgba(255, 255, 255, 0.15);
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg) !important;
+            background-image: 
+                linear-gradient(var(--dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+            background-size: 120px 120px;
+            background-position: center center;
+            color: var(--fg) !important;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .admin-frame {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            right: 40px;
+            bottom: 40px;
+            border: 1px solid var(--dim);
+            pointer-events: none;
+        }
+
+        .admin-frame::before, .admin-frame::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--fg);
+            opacity: 0.8;
+        }
+
+        .admin-frame::before {
+            top: -2px; 
+            left: -2px;
+            border-right: none; 
+            border-bottom: none;
+        }
+
+        .admin-frame::after {
+            bottom: -2px; 
+            right: -2px;
+            border-left: none; 
+            border-top: none;
+        }
+
+        .node-scanner {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .inner-core {
+            width: 60px;
+            height: 60px;
+            background-color: var(--dim);
+            border: 1px solid var(--fg);
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--fg);
+            box-shadow: 0 0 15px 3px var(--fg);
+            animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .title-group {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .main-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 16px;
+            text-transform: uppercase;
+            margin: 0 0 15px 0;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .sub-title {
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 10px;
+            color: var(--fg);
+            opacity: 0.6;
+            margin: 0 0 50px 0;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: fadeIn 2s ease-out;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--fg);
+            border-radius: 50%;
+            animation: blink 1s infinite alternate;
+        }
+
+        .status-text {
+            font-size: 14px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        @keyframes scan {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 110%; opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.85) rotate(0deg); opacity: 0.3; }
+            100% { transform: scale(1.15) rotate(90deg); opacity: 0.9; }
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; box-shadow: none; }
+            100% { opacity: 1; box-shadow: 0 0 10px var(--fg); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .admin-frame { top: 20px; left: 20px; right: 20px; bottom: 20px; }
+            .main-title { font-size: 28px; letter-spacing: 8px; }
+            .sub-title { font-size: 12px; letter-spacing: 5px; }
+            .node-scanner { width: 100px; height: 100px; margin-bottom: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-frame"></div>
+
+    <div class="node-scanner">
+        <div class="inner-core"></div>
+        <div class="scan-line"></div>
+    </div>
+
+    <div class="title-group">
+        <h1 class="main-title">Infinity Identity</h1>
+        <h2 class="sub-title">MEMBER NODE // PHASE 2</h2>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot"></div>
+        <div class="status-text">INITIALIZING SECURE NODE...</div>
+    </div>
+
+    <script src="brain.js"></script>
+    <script>
+        setTimeout(() => {
+            window.location.href = (typeof brain !== 'undefined' && brain.settings && Object.keys(brain.settings).length > 0) ? 'landing.html' : 'setup.html';
+        }, 3500);
+    </script>
+</body>
+</html>

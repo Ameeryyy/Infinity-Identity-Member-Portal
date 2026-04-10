@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Hub</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --card-bg: rgba(25, 25, 25, 0.8); --accent: #ffffff; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --card-bg: rgba(240, 240, 240, 0.8); --accent: #000000; } }
+        
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); 
+            background-size: 80px 80px; 
+            color: var(--fg) !important; 
+            overflow-x: hidden; 
+            display: block !important; 
+            text-align: left !important;
+            min-height: 100vh;
+        }
+
+        .top-left { position: absolute; top: 30px; left: 30px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; z-index: 10; text-decoration: none; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .container { width: 100%; max-width: 900px; margin: 0 auto; padding: 100px 20px 40px 20px; animation: fadeIn 0.5s; box-sizing: border-box; }
+        .page-title { font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; border-left: 5px solid var(--accent); padding-left: 20px; }
+        
+        .msg-list { display: flex; flex-direction: column; gap: 15px; }
+        
+        .msg-card { background: var(--card-bg); border: 1px solid var(--dim); border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px); position: relative; overflow: hidden; }
+        @media (prefers-color-scheme: light) { .msg-card { border-color: rgba(0,0,0,0.1); } }
+        .msg-card:hover { transform: translateX(5px); border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        @media (prefers-color-scheme: light) { .msg-card:hover { background: rgba(0,0,0,0.02); } }
+        
+        .msg-card.unread::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+        
+        .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        .badge { font-size: 9px; padding: 5px 10px; border: 1px solid currentColor; border-radius: 6px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; }
+        .badge-pay-due { color: #ff4757; background: rgba(255, 71, 87, 0.1); }
+        .badge-pay-ok { color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
+        .badge-transfer { color: #3498db; background: rgba(52, 152, 219, 0.1); }
+        .badge-system { color: #9b59b6; background: rgba(155, 89, 182, 0.1); }
+        .badge-request { color: #f39c12; background: rgba(243, 156, 18, 0.1); }
+        
+        .msg-time { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .msg-subject { font-size: 18px; margin: 0 0 8px 0; font-weight: 700; letter-spacing: 0.5px; }
+        .msg-preview { font-size: 12px; margin: 0; opacity: 0.6; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .timer-box { display: inline-block; background: rgba(255, 71, 87, 0.1); color: #ff4757; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 13px; font-weight: bold; margin-top: 8px; border: 1px solid rgba(255, 71, 87, 0.3); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 768px) { .container { padding: 80px 20px 20px 20px; } .msg-card { padding: 20px; } .msg-subject { font-size: 16px; } }
+    </style>
+</head>
+<body>
+    <a href="home.html" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    
+    <div class="container">
+        <h1 class="page-title">Secure Inbox</h1>
+        
+        <div class="msg-list">
+            
+            <div class="msg-card unread" onclick="window.location.href='message_view.html?id=msg1'">
+                <div class="msg-header">
+                    <span class="badge badge-pay-due">Payment Due</span>
+                    <span class="msg-time">Just Now</span>
+                </div>
+                <h3 class="msg-subject">Action Required: Node Activation Fee</h3>
+                <p class="msg-preview">Citizen Rahul Krishnan (INF-8832-A) has not completed the node fee. Activation will be cancelled soon.</p>
+                <div class="timer-box">Time Left: <span id="timer1">02:15:00</span></div>
+            </div>
+
+            <div class="msg-card unread" onclick="window.location.href='message_view.html?id=msg2'">
+                <div class="msg-header">
+                    <span class="badge badge-transfer">New Transfer</span>
+                    <span class="msg-time">10 Mins Ago</span>
+                </div>
+                <h3 class="msg-subject">Incoming Profile Route Detected</h3>
+                <p class="msg-preview">A new profile transfer request has arrived from Ward 02. Please review Anjali Menon's data packet.</p>
+            </div>
+
+            <div class="msg-card unread" onclick="window.location.href='message_view.html?id=msg3'">
+                <div class="msg-header">
+                    <span class="badge badge-request">New Request</span>
+                    <span class="msg-time">1 Hour Ago</span>
+                </div>
+                <h3 class="msg-subject">12 New Verification Packets</h3>
+                <p class="msg-preview">Multiple citizens have submitted their identity details for verification in your sector. Action required.</p>
+            </div>
+
+            <div class="msg-card" onclick="window.location.href='message_view.html?id=msg4'">
+                <div class="msg-header">
+                    <span class="badge badge-pay-ok">Payment Success</span>
+                    <span class="msg-time">2 Hours Ago</span>
+                </div>
+                <h3 class="msg-subject">Transaction Cleared: INF-1022-A</h3>
+                <p class="msg-preview">Arun Kumar has successfully completed the identity anchoring fee. Node is fully activated.</p>
+            </div>
+
+            <div class="msg-card" onclick="window.location.href='message_view.html?id=msg5'">
+                <div class="msg-header">
+                    <span class="badge badge-system">System Update</span>
+                    <span class="msg-time">1 Day Ago</span>
+                </div>
+                <h3 class="msg-subject">Protocol Update v2.4.1</h3>
+                <p class="msg-preview">The central ledger has been updated with enhanced cryptography. No downtime expected for node operators.</p>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="brain.js"></script>
+    <script>
+        let totalSeconds = 2 * 3600 + 15 * 60; 
+
+        function updateTimer() {
+            if (totalSeconds <= 0) return;
+            totalSeconds--;
+            
+            let h = Math.floor(totalSeconds / 3600);
+            let m = Math.floor((totalSeconds % 3600) / 60);
+            let s = totalSeconds % 60;
+            
+            h = String(h).padStart(2, '0');
+            m = String(m).padStart(2, '0');
+            s = String(s).padStart(2, '0');
+            
+            document.getElementById('timer1').innerText = `${h}:${m}:${s}`;
+        }
+        
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>

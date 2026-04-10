@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Details</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --card-bg: rgba(25, 25, 25, 0.8); --accent: #ffffff; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --card-bg: rgba(240, 240, 240, 0.8); --accent: #000000; } }
+        
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', -apple-system, sans-serif; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); 
+            background-size: 80px 80px; 
+            color: var(--fg) !important; 
+            overflow-x: hidden; 
+            display: block !important; 
+            text-align: left !important;
+            min-height: 100vh;
+        }
+
+        .top-left { position: absolute; top: 30px; left: 30px; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; z-index: 10; text-decoration: none; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 100px 40px 40px 40px; animation: fadeIn 0.5s; box-sizing: border-box; }
+        .page-title { font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; border-left: 5px solid var(--accent); padding-left: 20px; }
+        
+        .detail-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 50px; backdrop-filter: blur(20px); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+        @media (prefers-color-scheme: light) { .detail-card { border-color: rgba(0,0,0,0.2); box-shadow: 0 15px 40px rgba(0,0,0,0.1); } }
+        
+        .user-header { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; border-bottom: 1px solid var(--dim); padding-bottom: 30px; }
+        .user-avatar { width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px dashed var(--dim); flex-shrink: 0; }
+        @media (prefers-color-scheme: light) { .user-avatar { background: rgba(0,0,0,0.05); } }
+        .user-avatar svg { width: 50px; height: 50px; fill: var(--fg); opacity: 0.5; }
+        
+        .user-info h2 { margin: 0; font-size: 32px; letter-spacing: 1px; }
+        .user-info p { margin: 8px 0 0 0; font-size: 13px; opacity: 0.6; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 50px; }
+        .data-item { display: flex; flex-direction: column; gap: 8px; }
+        .data-label { font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; }
+        .data-val { font-size: 16px; font-weight: 600; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid var(--dim); word-break: break-word; }
+        @media (prefers-color-scheme: light) { .data-val { background: rgba(255,255,255,0.5); } }
+        
+        .action-bar { display: flex; gap: 20px; border-top: 1px solid var(--dim); padding-top: 30px; }
+        .btn { flex: 1; padding: 18px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; border: 1px solid var(--dim); border-radius: 12px; background: transparent; color: var(--fg); cursor: pointer; transition: all 0.3s; }
+        .btn-accept { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+        .btn-accept:hover { background: transparent; color: var(--fg); }
+        .btn-reject { color: #ff4757; border-color: rgba(255, 71, 87, 0.3); }
+        .btn-reject:hover { background: rgba(255, 71, 87, 0.1); border-color: #ff4757; }
+        .btn-transfer:hover { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        
+        @media (max-width: 768px) { .container { padding: 80px 20px 20px 20px; } .data-grid { grid-template-columns: 1fr; } .action-bar { flex-direction: column; } .detail-card { padding: 30px; } .user-info h2 { font-size: 24px; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Confirm Alert Style */
+        .inf-confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
+        .inf-confirm-btns button { flex: 1; }
+        .btn-outline { background: transparent !important; color: var(--fg) !important; border-color: var(--dim) !important; }
+        .btn-outline:hover { border-color: var(--fg) !important; }
+    </style>
+</head>
+<body>
+    <a href="#" onclick="history.back(); return false;" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    
+    <div class="container">
+        <h1 class="page-title">Citizen Details</h1>
+        <div class="detail-card">
+            <div class="user-header">
+                <div class="user-avatar">
+                    <svg viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>
+                </div>
+                <div class="user-info">
+                    <h2 id="u-name">Loading...</h2>
+                    <p id="u-id">Node ID: Loading...</p>
+                </div>
+            </div>
+            <div class="data-grid">
+                <div class="data-item"><span class="data-label">Full Address</span><span class="data-val" id="u-address">Loading...</span></div>
+                <div class="data-item"><span class="data-label">Date of Birth</span><span class="data-val" id="u-dob">Loading...</span></div>
+                <div class="data-item"><span class="data-label">Phone Number</span><span class="data-val" id="u-phone">Loading...</span></div>
+                <div class="data-item"><span class="data-label">Aadhar / ID Ref</span><span class="data-val" id="u-aadhar">Loading...</span></div>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-accept" onclick="confirmAction('accept')">Accept Node</button>
+                <button class="btn btn-transfer" onclick="confirmAction('transfer')">Transfer</button>
+                <button class="btn btn-reject" onclick="confirmAction('reject')">Reject Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="brain.js"></script>
+    <script>
+        const db = {
+            // Pending Requests
+            'INF-8832-A': { name: 'Rahul Krishnan', address: 'House No 45, Central Block, Ward 04', dob: '12-AUG-1995', phone: '+91 98765 43210', aadhar: 'XXXX-XXXX-8832' },
+            'INF-9021-B': { name: 'Meera Santhosh', address: 'Rose Villa, East Zone, Ward 04', dob: '05-MAY-1998', phone: '+91 87654 32109', aadhar: 'XXXX-XXXX-9021' },
+            'INF-7741-C': { name: 'Anand Varma', address: 'Varma Nilayam, South Block, Ward 04', dob: '22-NOV-1980', phone: '+91 76543 21098', aadhar: 'XXXX-XXXX-7741' },
+            
+            // Incoming Transfers
+            'INF-9105-C': { name: 'Anjali Menon', address: 'Krishna Nivas, Border Road, Ward 02', dob: '15-SEP-1992', phone: '+91 91234 56780', aadhar: 'XXXX-XXXX-9105' },
+            'INF-8842-A': { name: 'Kiran Das', address: 'Das Bhavan, Hill View, Ward 03', dob: '03-MAR-1988', phone: '+91 99887 76655', aadhar: 'XXXX-XXXX-8842' },
+            'INF-7210-D': { name: 'Faizal Rahman', address: 'Darussalam, Market Road, Ward 05', dob: '28-JUL-1990', phone: '+91 90123 45678', aadhar: 'XXXX-XXXX-7210' },
+            'INF-6391-B': { name: 'Priya Sharma', address: 'Sharma Niwas, Cross Street, Ward 02', dob: '10-OCT-1996', phone: '+91 98765 00000', aadhar: 'XXXX-XXXX-6391' },
+            
+            // Outgoing Transfers
+            'INF-4451-X': { name: 'Abhinav K', address: 'Kuttikattu House, River Bank, Ward 01', dob: '18-DEC-2000', phone: '+91 88888 99999', aadhar: 'XXXX-XXXX-4451' },
+            'INF-1102-Y': { name: 'Jithin T', address: 'Tharayil, Lake View, Ward 03', dob: '07-JAN-1994', phone: '+91 77777 66666', aadhar: 'XXXX-XXXX-1102' }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const reqId = urlParams.get('id') || 'INF-8832-A';
+        const user = db[reqId];
+
+        if(user) {
+            document.getElementById('u-name').innerText = user.name;
+            document.getElementById('u-id').innerText = "Node ID: " + reqId;
+            document.getElementById('u-address').innerText = user.address;
+            document.getElementById('u-dob').innerText = user.dob;
+            document.getElementById('u-phone').innerText = user.phone;
+            document.getElementById('u-aadhar').innerText = user.aadhar;
+        } else {
+            document.getElementById('u-name').innerText = "Record Not Found";
+        }
+
+        function customConfirm(title, message, confirmCallback) {
+            if(typeof brain !== 'undefined' && brain.setupCustomAlert) {
+                if(!document.querySelector('.inf-overlay')) {
+                    brain.setupCustomAlert();
+                }
+                const overlay = document.createElement('div');
+                overlay.className = 'inf-overlay';
+                overlay.innerHTML = `
+                    <div class="inf-alert">
+                        <h3>${title}</h3>
+                        <p style="margin-bottom: 0; font-size: 13px; line-height: 1.6;">${message}</p>
+                        <div class="inf-confirm-btns">
+                            <button class="btn-outline" onclick="const o=this.closest('.inf-overlay');o.classList.remove('inf-show');setTimeout(()=>o.remove(),300)">Cancel</button>
+                            <button id="inf-confirm-ok">Confirm</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.classList.add('inf-show'), 10);
+                
+                document.getElementById('inf-confirm-ok').onclick = function() {
+                    const o=this.closest('.inf-overlay');
+                    o.classList.remove('inf-show');
+                    setTimeout(()=> {
+                        o.remove();
+                        if(confirmCallback) confirmCallback();
+                    }, 300);
+                };
+            } else {
+                if(confirm(title + ": \n\n" + message)) {
+                    if(confirmCallback) confirmCallback();
+                }
+            }
+        }
+
+        function executeAction(type) {
+            if(type === 'accept') alert('Success', 'Profile has been verified and permanently anchored.');
+            if(type === 'transfer') alert('Routing Active', 'Profile transferred to the adjacent node.');
+            if(type === 'reject') alert('Node Rejected', 'The profile has been discarded from your jurisdiction.');
+            
+            setTimeout(() => history.back(), 2000);
+        }
+
+        function confirmAction(type) {
+            let title = "";
+            let msg = "";
+            
+            if(type === 'accept') {
+                title = "CONFIRMATION";
+                msg = "Are you sure you want to ACCEPT this citizen? This will verify their identity and permanently anchor them to your ward.";
+            } else if (type === 'transfer') {
+                title = "ROUTING WARNING";
+                msg = "Are you sure you want to TRANSFER this profile? Ensure they belong to an adjacent ward before proceeding.";
+            } else if (type === 'reject') {
+                title = "LEGAL WARNING";
+                msg = "Rejecting a legitimate citizen without proper investigation is a violation of the Identity Act. If the provided details are true, you will be held accountable and may face strict legal actions.<br><br>Are you absolutely sure you want to REJECT this node?";
+            }
+
+            customConfirm(title, msg, () => {
+                executeAction(type);
+            });
+        }
+    </script>
+</body>
+</html>

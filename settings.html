@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node Settings</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; --dim: rgba(255, 255, 255, 0.15); --accent: #ffffff; }
+        @media (prefers-color-scheme: light) { :root { --bg: #ffffff; --fg: #000000; --dim: rgba(0, 0, 0, 0.15); --accent: #000000; } }
+        body { margin: 0; padding: 0; background-color: var(--bg) !important; background-image: linear-gradient(var(--dim) 1px, transparent 1px), linear-gradient(90deg, var(--dim) 1px, transparent 1px); background-size: 80px 80px; color: var(--fg) !important; font-family: 'Segoe UI', -apple-system, sans-serif; overflow-x: hidden; overflow-y: auto; }
+        .top-left { position: absolute; top: clamp(15px, 4vw, 30px); left: clamp(15px, 4vw, 30px); cursor: pointer; opacity: 0.6; transition: opacity 0.3s; color: inherit; display: flex; align-items: center; justify-content: center; text-decoration: none; z-index: 10; }
+        .top-left:hover { opacity: 1; }
+        .top-left svg { width: clamp(20px, 6vw, 24px); height: clamp(20px, 6vw, 24px); fill: currentColor; }
+        .container { display: flex; flex-direction: column; justify-content: center; width: 90%; max-width: 500px; min-height: 100vh; padding: clamp(60px, 10vh, 80px) 0 clamp(30px, 5vh, 40px) 0; animation: fadeIn 0.5s; text-align: left; box-sizing: border-box; margin: 0 auto; z-index: 10; position: relative; }
+        .brand-title { font-size: clamp(10px, 2.5vw, 12px); font-weight: 800; text-transform: uppercase; letter-spacing: 3px; opacity: 0.5; margin-bottom: 10px; text-align: center; }
+        h2 { font-weight: 800; margin-top: 0; margin-bottom: clamp(30px, 5vw, 40px); text-align: center; font-size: clamp(24px, 6vw, 32px); text-transform: uppercase; letter-spacing: 2px; }
+        .setting-group { background: rgba(10,10,10,0.8); border: 1px solid var(--dim); border-radius: 16px; padding: 25px; margin-bottom: 25px; backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        @media (prefers-color-scheme: light) { .setting-group { background: rgba(245,245,245,0.8); box-shadow: 0 10px 30px rgba(0,0,0,0.1); } }
+        .setting-group h3 { font-size: 13px; font-weight: 800; margin-top: 0; margin-bottom: 20px; opacity: 0.9; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); }
+        .btn-group { display: flex; flex-direction: column; gap: 12px; }
+        button { padding: 15px; border: 1px dashed rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: inherit; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 800; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; text-transform: uppercase; letter-spacing: 1.5px; }
+        @media (prefers-color-scheme: light) { button { border-color: rgba(0,0,0,0.2); background: rgba(255,255,255,0.4); } }
+        button:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); border-style: solid; }
+        @media (prefers-color-scheme: light) { button:hover { background: rgba(0,0,0,0.05); } }
+        button:active { transform: scale(0.98); }
+        button.active { background: var(--fg); color: var(--bg); border-color: var(--fg); border-style: solid; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <a href="home.html" class="top-left">
+        <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+    </a>
+    <div class="container">
+        <div class="brand-title">Node Configuration</div>
+        <h2><strong>Settings</strong></h2>
+        
+        <div class="setting-group">
+            <h3>Theme Override</h3>
+            <div class="btn-group" id="theme-group">
+                <button id="btn-system" data-label="System Match" onclick="changeTheme('system')">System Match</button>
+                <button id="btn-dark" data-label="Dark Matrix" onclick="changeTheme('dark')">Dark Matrix</button>
+                <button id="btn-light" data-label="Light Sector" onclick="changeTheme('light')">Light Sector</button>
+            </div>
+        </div>
+        
+        <div class="setting-group">
+            <h3>Security Layer</h3>
+            <div class="btn-group">
+                <button id="btn-lock" onclick="toggleLock()">App Lock: Off</button>
+            </div>
+        </div>
+    </div>
+    <script src="brain.js"></script>
+    <script>
+        function updateUI() {
+            const settings = brain.settings || {};
+            document.querySelectorAll('#theme-group button').forEach(b => {
+                b.classList.remove('active');
+                b.innerText = b.getAttribute('data-label');
+            });
+            const theme = settings.theme || 'system';
+            const themeBtn = document.getElementById('btn-' + theme);
+            if (themeBtn) {
+                themeBtn.classList.add('active');
+                themeBtn.innerText = '✔  ' + themeBtn.getAttribute('data-label');
+            }
+            const lockBtn = document.getElementById('btn-lock');
+            if (settings.appLock) {
+                lockBtn.innerText = '✔  App Lock: Active';
+                lockBtn.classList.add('active');
+            } else {
+                lockBtn.innerText = 'App Lock: Disabled';
+                lockBtn.classList.remove('active');
+            }
+        }
+        function changeTheme(theme) {
+            brain.saveSettings({ theme });
+            updateUI();
+        }
+        async function toggleLock() {
+            const settings = brain.settings || {};
+            if (settings.appLock) {
+                brain.saveSettings({ appLock: false });
+                updateUI();
+            } else {
+                const success = await brain.setupAuth();
+                if (success) {
+                    brain.saveSettings({ appLock: true });
+                    updateUI();
+                } else {
+                    alert('Node Error', 'Failed to configure biometric lock.');
+                }
+            }
+        }
+        updateUI();
+    </script>
+</body>
+</html>

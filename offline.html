@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity - Network Offline</title>
+    <style>
+        :root { --bg: #000000; --fg: #ffffff; }
+        body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg) !important; 
+            background-image: linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px);
+            background-size: 60px 60px;
+            color: var(--fg) !important; 
+            font-family: system-ui, -apple-system, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; overflow: hidden; 
+        }
+        
+        .corner { position: absolute; width: clamp(30px, 8vw, 80px); height: clamp(30px, 8vw, 80px); border: 2px solid var(--fg); opacity: 0.15; transition: opacity 0.3s; pointer-events: none; }
+        .corner-tl { top: 40px; left: 40px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 40px; right: 40px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 40px; left: 40px; border-right: none; border-top: none; }
+        .corner-br { bottom: 40px; right: 40px; border-left: none; border-top: none; }
+
+        @media (max-width: 768px) {
+            .corner { opacity: 0.05; border-width: 1px; }
+            .corner-tl { top: 20px; left: 20px; }
+            .corner-tr { top: 20px; right: 20px; }
+            .corner-bl { bottom: 20px; left: 20px; }
+            .corner-br { bottom: 20px; right: 20px; }
+        }
+
+        .brand-title { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; position: absolute; top: 40px; }
+        
+        #mainMenu, #statsMenu { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; animation: fadeIn 0.4s; z-index: 10; }
+        #statsMenu { display: none; }
+        
+        .offline-icon { margin-bottom: 20px; opacity: 0.5; animation: pulse 2s infinite; }
+        .offline-icon svg { width: 64px; height: 64px; fill: currentColor; }
+        .offline-text { font-size: 24px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .sub-text { font-size: 11px; opacity: 0.6; margin-bottom: 40px; letter-spacing: 1px; text-transform: uppercase; max-width: 250px; line-height: 1.5; }
+        
+        .btn-main { width: 90%; max-width: 260px; padding: 16px; background: var(--fg); color: var(--bg); border: none; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 15px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px; }
+        .btn-main:active { transform: scale(0.95); }
+        .btn-alt { width: 90%; max-width: 260px; padding: 14px; background: transparent; color: var(--fg); border: 1px solid var(--fg); border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: bold; transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 15px; backdrop-filter: blur(5px); }
+        .btn-alt:hover { opacity: 1; }
+        .btn-alt:active { transform: scale(0.95); }
+        .error-state { background: #333333 !important; color: var(--fg) !important; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; max-width: 300px; margin-bottom: 15px; }
+        .stat-card { border: 1px dashed rgba(255,255,255,0.3); padding: 15px 5px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .stat-card.highlight { grid-column: span 2; border-color: var(--fg); border-style: solid; background: rgba(255,255,255,0.05); padding: 20px 5px; }
+        .stat-val { font-size: 28px; font-weight: bold; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
+        .stat-lbl { font-size: 9px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+
+        .history-container { width: 90%; max-width: 300px; max-height: 120px; overflow-y: auto; border: 1px dashed rgba(255,255,255,0.3); border-radius: 12px; margin-bottom: 25px; padding: 10px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .history-container::-webkit-scrollbar { width: 4px; }
+        .history-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+        .history-item { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); letter-spacing: 1px; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item span:first-child { opacity: 0.6; }
+
+        #fullScreenGame { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 1000; flex-direction: column; }
+        .game-top-bar { position: absolute; top: 30px; left: 30px; right: 30px; display: flex; justify-content: space-between; align-items: center; z-index: 1001; pointer-events: none; }
+        .score-display { font-size: 16px; font-weight: bold; letter-spacing: 3px; }
+        .exit-btn { pointer-events: auto; background: transparent; border: 1px solid var(--fg); color: var(--fg); padding: 10px 24px; border-radius: 30px; font-size: 11px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: transform 0.2s; }
+        .exit-btn:active { transform: scale(0.9); }
+        
+        #gameCanvas { flex: 1; width: 100%; height: 100%; object-fit: cover; display: block; touch-action: none; cursor: crosshair; }
+        
+        .game-msg-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; transition: opacity 0.3s; opacity: 0; text-align: center; }
+        .game-msg-overlay.show { opacity: 1; }
+        .msg-title { font-size: 28px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; text-shadow: 0 0 15px rgba(0,0,0,0.9); }
+        .msg-sub { font-size: 12px; opacity: 0.8; letter-spacing: 2px; text-transform: uppercase; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+
+        @keyframes pulse { 0% { opacity: 0.3; transform: scale(0.95); } 50% { opacity: 0.8; transform: scale(1); } 100% { opacity: 0.3; transform: scale(0.95); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="brand-title" id="mainBrand">Infinity Identity</div>
+    
+    <div id="mainMenu">
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24"><path d="M22.84,18L21,16.16V17H19V14.16L18.2,13.36C18.17,13.37 18.14,13.38 18.1,13.39L17.55,12.84C17.84,12.78 18.12,12.69 18.4,12.55C19.78,11.85 20.89,10.74 21.6,9.36C22.03,8.5 22.3,7.56 22.4,6.61L24,8.2V6H22V4L20.16,2.16L2.16,20.16L4,22H6V20L7.84,18.16L9.61,19.93C8.75,20.35 7.82,20.63 6.86,20.72L5.26,19.12V21.31H7.26V23.31L9.1,21.47L22.84,18M20.26,6.61C20.17,7.24 19.95,7.85 19.64,8.4C19.06,9.54 18.15,10.45 17.03,11.03C16.47,11.34 15.86,11.56 15.24,11.65L20.26,6.61M5.96,17.44C6.05,16.8 6.27,16.2 6.58,15.65C7.16,14.5 8.07,13.6 9.19,13.02C9.75,12.71 10.36,12.49 10.97,12.4L5.96,17.44M11,10L13.16,12.16L14,11.31V9.31H12V7.31L10.16,5.47L8.4,7.24L11,9.84V10Z"/></svg>
+        </div>
+        <div class="offline-text">Connection Lost</div>
+        <div class="sub-text">Server link broken. Please verify your network status.</div>
+        
+        <button class="btn-main" id="btnCheck" onclick="checkConnection()">Check Connection</button>
+        <button class="btn-alt" onclick="openStats()">Node Simulator</button>
+    </div>
+
+    <div id="statsMenu">
+        <div class="offline-text" style="margin-bottom: 20px; font-size: 18px;">Quantum Run</div>
+        <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-val" id="valHigh">0</div>
+                <div class="stat-lbl">High Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="valPlayed">0</div>
+                <div class="stat-lbl">Total Played</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="valLast">0</div>
+                <div class="stat-lbl">Last Score</div>
+            </div>
+        </div>
+        
+        <div class="history-container" id="historyList"></div>
+
+        <button class="btn-main" onclick="startFullscreenGame()">Start Game</button>
+        <button class="btn-alt" onclick="closeStats()">Back to Menu</button>
+    </div>
+
+    <div id="fullScreenGame">
+        <div class="game-top-bar">
+            <div class="score-display" id="liveScore">SCORE: 0</div>
+            <button class="exit-btn" onclick="exitGame()">Exit</button>
+        </div>
+        <div class="game-msg-overlay" id="gameMsgOverlay">
+            <div class="msg-title" id="msgTitle">TAP TO START</div>
+            <div class="msg-sub" id="msgSub">TAP LEFT OR RIGHT TO DODGE</div>
+        </div>
+        <canvas id="gameCanvas" width="600" height="800"></canvas>
+    </div>
+
+    <script src="brain.js"></script>
+    <script>
+        let highScore = parseInt(localStorage.getItem('inf_qrun_highscore')) || 0;
+        let totalPlayed = parseInt(localStorage.getItem('inf_qrun_played')) || 0;
+        let lastScore = parseInt(localStorage.getItem('inf_qrun_lastscore')) || 0;
+        let matchHistory = JSON.parse(localStorage.getItem('inf_qrun_history')) || [];
+
+        function checkConnection() {
+            const btn = document.getElementById('btnCheck');
+            btn.innerText = 'CHECKING...';
+            btn.style.opacity = '0.5';
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                if (navigator.onLine) {
+                    btn.innerText = 'ONLINE - REDIRECTING';
+                    setTimeout(() => { window.location.href = 'home.html'; }, 500);
+                } else {
+                    btn.innerText = 'STILL OFFLINE';
+                    btn.classList.add('error-state');
+                    setTimeout(() => {
+                        btn.innerText = 'CHECK CONNECTION';
+                        btn.classList.remove('error-state');
+                    }, 2000);
+                }
+            }, 1200);
+        }
+
+        function updateStatsUI() {
+            document.getElementById('valHigh').innerText = highScore;
+            document.getElementById('valPlayed').innerText = totalPlayed;
+            document.getElementById('valLast').innerText = lastScore;
+            
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            if (matchHistory.length === 0) {
+                historyList.innerHTML = '<div style="opacity:0.4; font-size:10px; padding:20px 0;">NO MATCH HISTORY</div>';
+            } else {
+                [...matchHistory].reverse().forEach((score, index) => {
+                    const matchNum = matchHistory.length - index;
+                    historyList.innerHTML += `
+                        <div class="history-item">
+                            <span>MATCH ${matchNum}</span>
+                            <span>SCORE: ${score}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function openStats() {
+            updateStatsUI();
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('statsMenu').style.display = 'flex';
+        }
+
+        function closeStats() {
+            document.getElementById('statsMenu').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'flex';
+        }
+
+        const fullScreenGame = document.getElementById('fullScreenGame');
+        const mainBrand = document.getElementById('mainBrand');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const liveScoreUI = document.getElementById('liveScore');
+        const overlay = document.getElementById('gameMsgOverlay');
+        const msgTitle = document.getElementById('msgTitle');
+        const msgSub = document.getElementById('msgSub');
+
+        let loopId;
+        let isPlaying = false;
+        let gameHasStarted = false;
+        
+        let score = 0;
+        let speed = 6;
+        let playerLane = 1; 
+        let obstacles = [];
+        let frameCount = 0;
+
+        function startFullscreenGame() {
+            document.getElementById('statsMenu').style.display = 'none';
+            mainBrand.style.display = 'none';
+            fullScreenGame.style.display = 'flex';
+            resetGameState();
+            overlay.classList.add('show');
+            msgTitle.innerText = "SYSTEM READY";
+            msgSub.innerText = "TAP LEFT/RIGHT TO MOVE";
+            drawStatic();
+        }
+
+        function exitGame() {
+            cancelAnimationFrame(loopId);
+            fullScreenGame.style.display = 'none';
+            mainBrand.style.display = 'block';
+            document.getElementById('statsMenu').style.display = 'flex';
+            updateStatsUI();
+        }
+
+        function resetGameState() {
+            score = 0;
+            speed = 6;
+            playerLane = 1;
+            obstacles = [];
+            frameCount = 0;
+            liveScoreUI.innerText = 'SCORE: 0';
+            gameHasStarted = false;
+            isPlaying = false;
+        }
+
+        function saveGameData() {
+            totalPlayed++;
+            lastScore = score;
+            if(score > highScore) highScore = score;
+            matchHistory.push(score);
+            if(matchHistory.length > 20) matchHistory.shift();
+            
+            localStorage.setItem('inf_qrun_highscore', highScore);
+            localStorage.setItem('inf_qrun_played', totalPlayed);
+            localStorage.setItem('inf_qrun_lastscore', lastScore);
+            localStorage.setItem('inf_qrun_history', JSON.stringify(matchHistory));
+        }
+
+        function handleInput(e) {
+            if(e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+            
+            if (!gameHasStarted || !isPlaying) {
+                if(gameHasStarted && !isPlaying) {
+                    resetGameState();
+                }
+                gameHasStarted = true;
+                isPlaying = true;
+                overlay.classList.remove('show');
+                loop();
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            let xPos = 0;
+            if(e.touches && e.touches.length > 0) {
+                xPos = e.touches[0].clientX - rect.left;
+            } else {
+                xPos = e.clientX - rect.left;
+            }
+            
+            if (xPos < rect.width / 2) {
+                if (playerLane > 0) playerLane--; 
+            } else {
+                if (playerLane < 2) playerLane++; 
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleInput);
+        canvas.addEventListener('touchstart', handleInput, {passive: false});
+
+        function drawStatic() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLanes();
+            drawPlayer();
+        }
+
+        function drawLanes() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/3, 0); ctx.lineTo(canvas.width/3, canvas.height);
+            ctx.moveTo((canvas.width/3)*2, 0); ctx.lineTo((canvas.width/3)*2, canvas.height);
+            ctx.stroke();
+        }
+
+        function drawPlayer() {
+            const laneCenters = [canvas.width/6, canvas.width/2, (canvas.width/6)*5];
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ffffff';
+            ctx.fillRect(laneCenters[playerLane] - 25, canvas.height - 100, 50, 50);
+            ctx.shadowBlur = 0;
+        }
+
+        function loop() {
+            if (!isPlaying) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLanes();
+            
+            const laneCenters = [canvas.width/6, canvas.width/2, (canvas.width/6)*5];
+            frameCount++;
+
+            let spawnRate = Math.max(15, Math.floor(50 - speed * 1.5));
+            if (frameCount % spawnRate === 0) {
+                obstacles.push({
+                    lane: Math.floor(Math.random() * 3),
+                    y: -60,
+                    passed: false
+                });
+            }
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.y += speed;
+                
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffffff';
+                
+                // Draw X Box Obstacle (B&W Theme)
+                const ox = laneCenters[obs.lane] - 30;
+                const oy = obs.y;
+                
+                ctx.strokeRect(ox, oy, 60, 60);
+                ctx.beginPath();
+                ctx.moveTo(ox, oy);
+                ctx.lineTo(ox + 60, oy + 60);
+                ctx.moveTo(ox + 60, oy);
+                ctx.lineTo(ox, oy + 60);
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+
+                if (obs.y > canvas.height - 100 && !obs.passed) {
+                    obs.passed = true;
+                    score++;
+                    speed += 0.05;
+                    liveScoreUI.innerText = 'SCORE: ' + score;
+                }
+
+                if (obs.lane === playerLane && Math.abs(obs.y - (canvas.height - 100)) < 55) {
+                    isPlaying = false;
+                    saveGameData();
+                    overlay.classList.add('show');
+                    msgTitle.innerText = "NODE CRASHED";
+                    msgSub.innerText = "TAP TO REBOOT SECTOR";
+                }
+            }
+
+            obstacles = obstacles.filter(o => o.y < canvas.height + 100);
+
+            drawPlayer();
+            
+            if (isPlaying) {
+                loopId = requestAnimationFrame(loop);
+            }
+        }
+    </script>
+</body>
+</html>

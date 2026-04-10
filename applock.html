@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Identity - Security Gateway</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --dim: rgba(255, 255, 255, 0.15);
+            --panel-bg: rgba(10, 10, 10, 0.85);
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #ffffff;
+                --fg: #000000;
+                --dim: rgba(0, 0, 0, 0.15);
+                --panel-bg: rgba(245, 245, 245, 0.85);
+            }
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background-color: var(--bg) !important;
+            background-image: 
+                linear-gradient(var(--dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+            background-size: 80px 80px;
+            color: var(--fg) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .gateway-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 450px;
+            min-height: 400px;
+            background: var(--panel-bg);
+            border: 1px solid var(--dim);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            padding: 50px 40px;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .gateway-container::before, .gateway-container::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--fg);
+            pointer-events: none;
+        }
+
+        .gateway-container::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .gateway-container::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .scanner-visual {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed var(--dim);
+            border-radius: 50%;
+            margin-bottom: 30px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: spinPulse 4s linear infinite;
+        }
+
+        .scanner-core {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 2px solid var(--fg);
+            border-radius: 50%;
+            animation: innerPulse 2s ease-in-out infinite alternate;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        p {
+            margin: 0 0 35px 0;
+            font-size: 14px;
+            line-height: 1.8;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        strong {
+            color: var(--fg);
+            opacity: 1;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: 1px solid var(--fg);
+            background: var(--fg);
+            color: var(--bg);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background: transparent;
+            color: var(--fg);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spinPulse {
+            0% { transform: rotate(0deg); box-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+            100% { transform: rotate(360deg); box-shadow: 0 0 0 rgba(255,255,255,0); }
+        }
+
+        @keyframes innerPulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @media (max-width: 500px) {
+            .gateway-container { width: 85%; padding: 40px 25px; }
+            h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gateway-container" id="lockContainer">
+        <div class="scanner-visual">
+            <div class="scanner-core"></div>
+        </div>
+        <h2>Security Gateway</h2>
+        <p>Awaiting <strong>biometric verification</strong>. Click below to authenticate using your device's <strong>secure node lock</strong>.</p>
+        <button onclick="enableLock()">Authenticate Node</button>
+    </div>
+
+    <script src="brain.js"></script>
+    <script>
+        async function enableLock() {
+            if(typeof brain === 'undefined') {
+                alert('System Error', 'brain.js is not loaded properly.');
+                return;
+            }
+            
+            const success = await brain.setupAuth();
+            if (success) {
+                const isFirstTime = !brain.settings || !brain.settings.setupComplete;
+                brain.saveSettings({ appLock: true, setupComplete: true });
+                localStorage.removeItem('inf_needs_lock');
+                
+                if (isFirstTime) {
+                    const container = document.getElementById('lockContainer');
+                    container.style.animation = 'none';
+                    container.innerHTML = `
+                        <div class="scanner-visual" style="border: 2px solid var(--fg); animation: none; box-shadow: 0 0 20px var(--fg);">
+                            <div class="scanner-core" style="background: var(--fg); animation: none;"></div>
+                        </div>
+                        <h2>Node Secured</h2>
+                        <p>Your <strong>identity is verified</strong> and the node is now <strong>securely locked</strong> to this device.</p>
+                        <button onclick="window.location.href='home.html'">Enter Portal</button>
+                    `;
+                    setTimeout(() => container.style.animation = 'fadeIn 0.5s', 10);
+                } else {
+                    const returnUrl = localStorage.getItem('inf_lock_return') || 'home.html';
+                    localStorage.removeItem('inf_lock_return');
+                    window.location.href = returnUrl;
+                }
+            } else {
+                if(window.alert) {
+                    alert('Authentication Failed', 'We could not verify your identity. Please try again.');
+                } else {
+                    console.error('Authentication Failed');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
